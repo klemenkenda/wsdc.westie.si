@@ -14,8 +14,10 @@
 <style>
     .profile-hero { position: relative; overflow: hidden; }
     .profile-hero::before {
-        content: ''; position: absolute; inset: 0 0 auto 0; height: 5rem;
+        content: ''; position: absolute; inset: 0 0 auto 0; height: 9rem;
         background: linear-gradient(120deg, rgba(var(--brand-rgb), .16), rgba(219, 39, 119, .12));
+        -webkit-mask-image: linear-gradient(180deg, #000 30%, transparent);
+        mask-image: linear-gradient(180deg, #000 30%, transparent);
     }
     .profile-hero .card-body { position: relative; padding: 1.5rem; }
     .avatar {

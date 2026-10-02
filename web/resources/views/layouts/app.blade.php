@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'SLO WCS Lestvica') – Slovenian West Coast Swing</title>
+    <title>@yield('title', 'Skupna lestvica') · SLO WSDC Ranking</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,{{ rawurlencode(trim(view('partials.logo')->render())) }}">
     <script>
         // Apply saved/system theme before first paint to avoid a flash
         (function () {
@@ -105,13 +106,12 @@
             display: flex; align-items: center; gap: .6rem;
             font-weight: 800; letter-spacing: -.01em; color: var(--bs-body-color);
         }
-        .brand-mark {
-            width: 2.1rem; height: 2.1rem; border-radius: .65rem;
-            display: grid; place-items: center; font-size: 1.1rem;
-            background: linear-gradient(135deg, var(--brand), var(--brand-2));
-            box-shadow: 0 6px 16px -6px rgba(var(--brand-rgb), .7);
-        }
-        .brand-sub { display: block; font-size: .68rem; font-weight: 500; color: var(--text-muted); letter-spacing: .02em; margin-top: -.15rem; }
+        .brand-mark { display: block; width: 2.4rem; height: 2.4rem; flex-shrink: 0; border-radius: .7rem; box-shadow: 0 6px 16px -6px rgba(var(--brand-rgb), .7); transition: transform .2s; }
+        .brand-mark svg { display: block; width: 100%; height: 100%; }
+        .navbar-brand:hover .brand-mark { transform: rotate(-6deg) scale(1.05); }
+        .brand-name { line-height: 1.1; font-size: 1.15rem; }
+        .brand-accent { background: linear-gradient(135deg, var(--brand), var(--brand-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .brand-sub { display: block; font-size: .68rem; font-weight: 500; color: var(--text-muted); letter-spacing: .02em; margin-top: .2rem; }
         .app-nav .nav-link {
             font-weight: 500; font-size: .92rem; color: var(--text-muted);
             padding: .45rem .85rem !important; border-radius: 999px;
@@ -182,6 +182,7 @@
         td.col-pts, th.col-pts { width: 3.5rem; text-align: right; }
         .pts-zero { color: var(--text-muted); opacity: .45; }
         .dancer-link { font-weight: 600; color: var(--bs-body-color); }
+        td > .dancer-link:first-child { white-space: nowrap; }
         .dancer-link:hover { color: var(--brand); }
         .best-event { font-size: .88rem; }
         .best-meta { font-size: .76rem; color: var(--text-muted); }
@@ -285,8 +286,8 @@
 <nav class="navbar navbar-expand-lg app-nav">
     <div class="container">
         <a class="navbar-brand" href="/">
-            <span class="brand-mark">🕺</span>
-            <span>SLO WCS<span class="brand-sub">West Coast Swing lestvica</span></span>
+            <span class="brand-mark">@include('partials.logo')</span>
+            <span class="brand-name">SLO WSDC <span class="brand-accent">Ranking</span><span class="brand-sub">Slovenska West Coast Swing lestvica</span></span>
         </a>
         <div class="d-flex align-items-center gap-2 order-lg-last">
             <button class="icon-btn" type="button" id="themeToggle" title="Preklopi temo" aria-label="Preklopi temo">

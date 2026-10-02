@@ -1,4 +1,4 @@
-# Deployment Guide — SLO WCS Rankings
+# Deployment Guide — SLO WSDC Ranking
 
 Shared hosting deployment: PHP + FTP upload + cron. No SSH or Docker required on the server.
 
@@ -17,7 +17,7 @@ slo-wsdc-db/
 +-- slo_wsdc_ids.csv             ? list of Slovenian dancer WSDC IDs (editable via /admin)
 +-- web/                         ? Laravel application (vendor/ is committed)
 ¦   +-- app/
-¦   +-- vendor/                  ? committed — no composer available on shared hosting
+¦   +-- vendor/                  ? committed — no composer available on shared hosting; build with `composer install --no-dev --optimize-autoloader`
 ¦   +-- .env.production.example  ? copy to .env on the server and fill in values
 ¦   +-- ...
 +-- public_html/                 ? maps to the server webroot
