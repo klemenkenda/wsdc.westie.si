@@ -45,7 +45,7 @@ RUN sed -i 's/^user = www-data/user = root/' /usr/local/etc/php-fpm.d/www.conf &
 EXPOSE 9000
 
 # Entrypoint: ensure data dirs are writable before starting FPM
-RUN printf '#!/bin/sh\nmkdir -p /var/www/data/raw\nchmod -R 777 /var/www/data\nchmod 777 /tmp\nexec php-fpm "$@"\n' > /usr/local/bin/entrypoint.sh && \
+RUN printf '#!/bin/sh\nmkdir -p /var/www/data/raw\nchmod -R 777 /var/www/data\nchmod 777 /tmp\nexec php-fpm -R "$@"\n' > /usr/local/bin/entrypoint.sh && \
     chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
