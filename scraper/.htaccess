@@ -1,0 +1,3 @@
+<FilesMatch "\.(inc|php5|php4|php3|php2|php|phtml)$">
+    SetHandler application/x-lsphp83
+</FilesMatch>

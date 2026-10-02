@@ -1,0 +1,25 @@
+# Generated data files – not committed to source control
+data/raw/
+data/dancers.json
+data/last_updated.txt
+data/scraper_live.log
+data/scraper.log
+
+# Cookie file used during scraping
+/tmp/wsdc_cookies.txt
+
+# Laravel (web/ subfolder will add its own .gitignore)
+# NOTE: web/vendor IS committed — shared hosting has no SSH/composer
+web/node_modules/
+web/.env
+web/.env.*
+!web/.env.example
+!web/.env.production.example
+web/storage/logs/
+web/storage/framework/cache/
+web/storage/framework/sessions/
+web/storage/framework/views/
+web/bootstrap/cache/
+
+# public_html static build artefacts (copied from web/public, not committed)
+public_html/build/

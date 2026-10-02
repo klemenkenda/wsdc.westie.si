@@ -1,0 +1,187 @@
+name: Deploy wsdc.westie.si
+
+# Everything lives under /domains/wsdc.westie.si/, in the layout the app expects —
+# the scraper and the Laravel app both resolve data/ and slo_wsdc_ids.csv one level
+# above web/ (dirname(base_path())):
+#
+#   public_html/       → docroot; index.php reaches into ../web/
+#   web/               → Laravel app, vendor/ included (no composer on the host)
+#   scraper/           → CLI scraper, also run from /admin and by cron
+#   data/              → written by the scraper on the server. Never uploaded, only created.
+#   slo_wsdc_ids.csv   → edited on the server through /admin. Uploaded only when asked for,
+#                        via the "publish_ids" input on a manual run, because uploading it
+#                        overwrites dancers added through the live admin page.
+#
+# Each upload keeps its own state file on the server; sharing one would make each step
+# look like a wholesale deletion to the other. The action only deletes files listed in
+# its own state, so whatever the app writes on the server (data/, storage/) is left alone.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "public_html/**"
+      - "web/**"
+      - "scraper/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+    inputs:
+      publish_ids:
+        description: "Also upload slo_wsdc_ids.csv — OVERWRITES the dancer list on the server, dropping dancers added through /admin"
+        type: boolean
+        default: false
+
+# An overlapping run would race the state files on the server.
+concurrency:
+  group: deploy-wsdc-westie-si
+  cancel-in-progress: false
+
+env:
+  ROOT: /domains/wsdc.westie.si
+
+jobs:
+  deploy:
+    name: FTPS deploy
+    runs-on: ubuntu-latest
+    # The first run uploads all of web/vendor/ (~77 MB, thousands of files).
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # web/.env is not in the repo. It is written here from secrets, so the server copy
+      # is always the one this workflow produced.
+      - name: Write web/.env
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+          SCRAPER_SECRET: ${{ secrets.SCRAPER_SECRET }}
+        run: |
+          if [ -z "$APP_KEY" ] || [ -z "$SCRAPER_SECRET" ]; then
+            echo "::error::Secrets APP_KEY and SCRAPER_SECRET must be set on the repository."
+            exit 1
+          fi
+          cat > web/.env <<EOF
+          APP_NAME="SLO WCS Rankings"
+          APP_ENV=production
+          APP_KEY=$APP_KEY
+          APP_DEBUG=false
+          APP_URL=https://wsdc.westie.si
+
+          LOG_CHANNEL=single
+          LOG_LEVEL=error
+
+          SESSION_DRIVER=file
+          CACHE_STORE=file
+
+          SCRAPER_SECRET=$SCRAPER_SECRET
+          PHP_CLI_BIN=/opt/alt/php83/usr/bin/php
+          EOF
+          sed -i 's/^ *//' web/.env
+
+      # FTP does not create empty directories, and the .gitignore files that keep Laravel's
+      # runtime folders in the repo are excluded from the upload. A .keep in each one makes
+      # them exist on the server.
+      - name: Mark runtime directories
+        run: |
+          for d in web/storage/logs web/storage/app/private web/storage/app/public \
+                   web/storage/framework/cache/data web/storage/framework/sessions \
+                   web/storage/framework/views web/bootstrap/cache; do
+            mkdir -p "$d" && touch "$d/.keep"
+          done
+          mkdir -p deploy-data/raw && touch deploy-data/.keep deploy-data/raw/.keep
+          mkdir -p deploy-ids && cp slo_wsdc_ids.csv deploy-ids/
+
+      - name: Deploy docroot
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          port: 6021
+          protocol: ftps
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./public_html/
+          server-dir: ${{ env.ROOT }}/public_html/
+          state-name: .deploy-public.json
+          exclude: |
+            **/.git*
+            **/.git*/**
+
+      - name: Deploy app
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          port: 6021
+          protocol: ftps
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./web/
+          server-dir: ${{ env.ROOT }}/web/
+          state-name: .deploy-web.json
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .env.*
+            node_modules/**
+            tests/**
+
+      - name: Deploy scraper
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          port: 6021
+          protocol: ftps
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./scraper/
+          server-dir: ${{ env.ROOT }}/scraper/
+          state-name: .deploy-scraper.json
+          exclude: |
+            **/.git*
+            **/.git*/**
+
+      # Only creates data/ and data/raw/; the scraper's output is never in this state file,
+      # so it is never touched.
+      - name: Create data directories
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          port: 6021
+          protocol: ftps
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./deploy-data/
+          server-dir: ${{ env.ROOT }}/data/
+          state-name: .deploy-data.json
+
+      - name: Publish slo_wsdc_ids.csv
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_ids
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          port: 6021
+          protocol: ftps
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./deploy-ids/
+          server-dir: ${{ env.ROOT }}/
+          state-name: .deploy-ids.json
+
+      # A green FTP run means "the files arrived", not "the site works". The layout's title
+      # only renders if PHP 8.3 parsed Laravel, the rewrite applied and ../web/ resolved.
+      - name: Smoke check
+        run: |
+          code=$(curl -sS -o /tmp/home.html -w '%{http_code}' --max-time 30 -L https://wsdc.westie.si/ || echo 000)
+          echo "--- https://wsdc.westie.si/ -> $code"
+          head -c 400 /tmp/home.html 2>/dev/null || true
+          echo
+
+          case "$code" in
+            200)
+              if ! grep -q "Slovenian West Coast Swing" /tmp/home.html; then
+                echo "::error::HTTP 200 but not the app — the host's placeholder index.html, or another page, is answering."
+                exit 1
+              fi ;;
+            000) echo "::error::No response at all: DNS, TLS or the host being down."; exit 1 ;;
+            500) echo "::error::HTTP 500 — check web/storage/logs/laravel.log, that PHP 8.3 is selected (public_html/.htaccess) and that web/.env arrived."; exit 1 ;;
+            *)   echo "::error::Unexpected reply (HTTP $code)."; exit 1 ;;
+          esac
