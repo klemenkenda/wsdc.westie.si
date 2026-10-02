@@ -43,7 +43,7 @@ jobs:
   deploy:
     name: FTPS deploy
     runs-on: ubuntu-latest
-    # The first run uploads all of web/vendor/ (~77 MB, thousands of files).
+    # The first run uploads all of web/vendor/ (~39 MB, thousands of files).
     timeout-minutes: 90
     steps:
       - name: Checkout
@@ -80,15 +80,16 @@ jobs:
 
       # FTP does not create empty directories, and the .gitignore files that keep Laravel's
       # runtime folders in the repo are excluded from the upload. A .keep in each one makes
-      # them exist on the server.
+      # them exist on the server. The .keep files must not be empty: this host answers every
+      # 0-byte upload with "425 Unable to build data connection", which fails the action.
       - name: Mark runtime directories
         run: |
           for d in web/storage/logs web/storage/app/private web/storage/app/public \
                    web/storage/framework/cache/data web/storage/framework/sessions \
-                   web/storage/framework/views web/bootstrap/cache; do
-            mkdir -p "$d" && touch "$d/.keep"
+                   web/storage/framework/views web/bootstrap/cache \
+                   deploy-data deploy-data/raw; do
+            mkdir -p "$d" && echo "keep" > "$d/.keep"
           done
-          mkdir -p deploy-data/raw && touch deploy-data/.keep deploy-data/raw/.keep
           mkdir -p deploy-ids && cp slo_wsdc_ids.csv deploy-ids/
 
       - name: Deploy docroot
@@ -106,12 +107,16 @@ jobs:
             **/.git*
             **/.git*/**
 
-      # web/vendor/ is ~8,600 files. Sent one by one over FTP it runs ~3 s a file, and the
+      # web/vendor/ is ~6,200 files. Sent one by one over FTP it runs ~3 s a file, and the
       # host drops the connection after ~15 minutes, long before the end. So it goes up as a
       # single zip that a one-off PHP script unpacks next to the live copy and swaps in.
       # The script's URL carries a token generated for this run only, and it deletes itself
-      # and the zip when done. Skipped when the server's vendor/ was built from the same
-      # composer.lock — the hash is stored in web/vendor/.composer-lock.sha256.
+      # and the zip when done. Skipped when the server's vendor/ matches — the hash of
+      # composer.lock plus vendor/composer/installed.json (which differs between a --no-dev
+      # and a full install of the same lock) is stored in web/vendor/.composer-lock.sha256.
+      #
+      # vendor/ must be committed as a production install:
+      #   composer install --no-dev --optimize-autoloader
       - name: Install lftp
         run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
 
@@ -128,7 +133,12 @@ jobs:
               $1; bye"
           }
 
-          want=$(sha256sum web/composer.lock | cut -d' ' -f1)
+          if ! grep -q '"dev": false' web/vendor/composer/installed.json; then
+            echo "::error::web/vendor/ contains dev packages. Run 'composer install --no-dev --optimize-autoloader' in web/ and commit vendor/."
+            exit 1
+          fi
+
+          want=$(cat web/composer.lock web/vendor/composer/installed.json | sha256sum | cut -d' ' -f1)
           have=$(lftp_run "cat $ROOT/web/vendor/.composer-lock.sha256" 2>/dev/null | tr -d '[:space:]' || true)
           echo "composer.lock: local $want, server ${have:-(none)}"
           if [ "$want" = "$have" ]; then
@@ -170,6 +180,10 @@ jobs:
           if (!rename("$stage/vendor", "$root/web/vendor")) $fail('cannot move new vendor in');
           rrmdir($stage);
           rrmdir($old);
+          // The cached provider list may name packages the new vendor/ no longer has, which
+          // would 500 every request. Laravel rebuilds both files on the next request.
+          @unlink("$root/web/bootstrap/cache/packages.php");
+          @unlink("$root/web/bootstrap/cache/services.php");
           unlink($zipPath);
           echo "OK " . trim(file_get_contents("$root/web/vendor/.composer-lock.sha256")) . "\n";
           unlink(__FILE__);
@@ -201,6 +215,7 @@ jobs:
             vendor/**
             node_modules/**
             tests/**
+            public/**
 
       - name: Deploy scraper
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
