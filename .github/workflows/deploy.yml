@@ -61,7 +61,7 @@ jobs:
             exit 1
           fi
           cat > web/.env <<EOF
-          APP_NAME="SLO WCS Rankings"
+          APP_NAME="SLO WSDC Ranking"
           APP_ENV=production
           APP_KEY=$APP_KEY
           APP_DEBUG=false
@@ -106,6 +106,83 @@ jobs:
             **/.git*
             **/.git*/**
 
+      # web/vendor/ is ~8,600 files. Sent one by one over FTP it runs ~3 s a file, and the
+      # host drops the connection after ~15 minutes, long before the end. So it goes up as a
+      # single zip that a one-off PHP script unpacks next to the live copy and swaps in.
+      # The script's URL carries a token generated for this run only, and it deletes itself
+      # and the zip when done. Skipped when the server's vendor/ was built from the same
+      # composer.lock — the hash is stored in web/vendor/.composer-lock.sha256.
+      - name: Install lftp
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+
+      - name: Deploy web/vendor (zip)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          lftp_run() {
+            lftp -u "$FTP_USERNAME,$FTP_PASSWORD" -p 6021 "$FTP_SERVER" -e "
+              set ftp:ssl-force true; set ftp:ssl-protect-data true;
+              set ssl:verify-certificate false; set net:max-retries 3; set net:timeout 30;
+              $1; bye"
+          }
+
+          want=$(sha256sum web/composer.lock | cut -d' ' -f1)
+          have=$(lftp_run "cat $ROOT/web/vendor/.composer-lock.sha256" 2>/dev/null | tr -d '[:space:]' || true)
+          echo "composer.lock: local $want, server ${have:-(none)}"
+          if [ "$want" = "$have" ]; then
+            echo "Server vendor/ is current — skipping."
+            exit 0
+          fi
+
+          echo "$want" > web/vendor/.composer-lock.sha256
+          (cd web && zip -qr ../vendor.zip vendor)
+          ls -lh vendor.zip
+
+          token=$(openssl rand -hex 24)
+          script="_vendor_$token.php"
+          cat > "$script" <<'PHP'
+          <?php
+          // One-off: unpack ../vendor.zip into ../web/vendor. Written and removed by deploy.yml.
+          set_time_limit(0);
+          header('Content-Type: text/plain');
+          $root = dirname(__DIR__);
+          $zipPath = "$root/vendor.zip";
+          $fail = function (string $msg) { http_response_code(500); echo "FAIL: $msg\n"; @unlink(__FILE__); exit; };
+          function rrmdir(string $d): void {
+              if (!is_dir($d)) return;
+              $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($d, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+              foreach ($it as $f) { $f->isDir() ? rmdir($f->getPathname()) : unlink($f->getPathname()); }
+              rmdir($d);
+          }
+          if (!class_exists('ZipArchive')) $fail('PHP zip extension missing');
+          $zip = new ZipArchive();
+          if ($zip->open($zipPath) !== true) $fail("cannot open $zipPath");
+          $stage = "$root/web/.vendor_stage";
+          rrmdir($stage);
+          mkdir($stage);
+          if (!$zip->extractTo($stage)) $fail('extract failed');
+          $zip->close();
+          $old = "$root/web/.vendor_old";
+          rrmdir($old);
+          if (is_dir("$root/web/vendor") && !rename("$root/web/vendor", $old)) $fail('cannot move old vendor aside');
+          if (!rename("$stage/vendor", "$root/web/vendor")) $fail('cannot move new vendor in');
+          rrmdir($stage);
+          rrmdir($old);
+          unlink($zipPath);
+          echo "OK " . trim(file_get_contents("$root/web/vendor/.composer-lock.sha256")) . "\n";
+          unlink(__FILE__);
+          PHP
+          sed -i 's/^ *//' "$script"
+
+          lftp_run "put vendor.zip -o $ROOT/vendor.zip; put $script -o $ROOT/public_html/$script"
+          out=$(curl -sS --max-time 600 "https://wsdc.westie.si/$script" || true)
+          echo "$out"
+          # Belt and braces: the script removes both itself, but not if PHP never ran.
+          lftp_run "rm -f $ROOT/public_html/$script; rm -f $ROOT/vendor.zip" >/dev/null 2>&1 || true
+          case "$out" in "OK $want"*) ;; *) echo "::error::vendor unpack did not confirm."; exit 1 ;; esac
+
       - name: Deploy app
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
@@ -121,6 +198,7 @@ jobs:
             **/.git*
             **/.git*/**
             .env.*
+            vendor/**
             node_modules/**
             tests/**
 
@@ -177,7 +255,7 @@ jobs:
 
           case "$code" in
             200)
-              if ! grep -q "Slovenian West Coast Swing" /tmp/home.html; then
+              if ! grep -qE "SLO WSDC Ranking|Slovenian West Coast Swing" /tmp/home.html; then
                 echo "::error::HTTP 200 but not the app — the host's placeholder index.html, or another page, is answering."
                 exit 1
               fi ;;
