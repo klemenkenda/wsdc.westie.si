@@ -35,6 +35,13 @@
             --shadow-sm: 0 1px 2px rgba(15, 23, 42, .04), 0 1px 3px rgba(15, 23, 42, .06);
             --shadow-md: 0 4px 24px -6px rgba(15, 23, 42, .10);
             --leader: #6366f1;
+            /* Division colours, shared by badges and the analysis charts. */
+            --div-CHA: #8b5cf6;
+            --div-ALS: #3b82f6;
+            --div-ADV: #10b981;
+            --div-INT: #f59e0b;
+            --div-NOV: #06b6d4;
+            --div-NEW: #94a3b8;
             --follower: #f43f5e;
 
             --bs-body-font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -211,12 +218,12 @@
             color: color-mix(in srgb, var(--c) 65%, #fff);
             background: color-mix(in srgb, var(--c) 20%, transparent);
         }
-        .div-CHA { --c: #8b5cf6; }
-        .div-ALS { --c: #3b82f6; }
-        .div-ADV { --c: #10b981; }
-        .div-INT { --c: #f59e0b; }
-        .div-NOV { --c: #06b6d4; }
-        .div-NEW { --c: #94a3b8; }
+        .div-CHA { --c: var(--div-CHA); }
+        .div-ALS { --c: var(--div-ALS); }
+        .div-ADV { --c: var(--div-ADV); }
+        .div-INT { --c: var(--div-INT); }
+        .div-NOV { --c: var(--div-NOV); }
+        .div-NEW { --c: var(--div-NEW); }
 
         .role-badge {
             display: inline-flex; align-items: center; gap: .35em;

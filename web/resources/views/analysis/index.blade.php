@@ -204,13 +204,7 @@
     const S = @json($chartData);
     const DIVS = ['CHA', 'ALS', 'ADV', 'INT', 'NOV', 'NEW'];
 
-    // Divisions are ordered, so they share one hue stepped light (NEW) to
-    // dark (CHA); in dark mode the ramp flips so CHA is the brightest.
-    // Both ramps and the role pairs pass the colour-vision checks.
-    const RAMP = {
-        light: { NEW: '#9aa6f8', NOV: '#7c84f3', INT: '#6366f1', ADV: '#4338ca', ALS: '#312e81', CHA: '#1e1b4b' },
-        dark:  { NEW: '#4f46e5', NOV: '#6366f1', INT: '#818cf8', ADV: '#a5b4fc', ALS: '#c7d2fe', CHA: '#e0e7ff' },
-    };
+    // Division colours come from the layout, so the charts match the badges.
     const ROLE = {
         light: { leader: '#6366f1', follower: '#f43f5e' },
         dark:  { leader: '#7c83f0', follower: '#f2546f' },
@@ -222,7 +216,8 @@
     function colors() {
         const t = theme();
         return {
-            div: RAMP[t], role: ROLE[t], total: ROLE[t].leader,
+            div: Object.fromEntries(DIVS.map(d => [d, cssVar('--div-' + d)])),
+            role: ROLE[t], total: ROLE[t].leader,
             surface: cssVar('--surface') || '#ffffff',
             grid: cssVar('--border-soft') || '#e5e7eb',
             muted: cssVar('--text-muted') || '#64748b',
