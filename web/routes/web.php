@@ -19,6 +19,7 @@ Route::get('/ranking/followers/all',      [RankingController::class, 'followers'
 Route::get('/ranking/absolute',           [RankingController::class, 'absolute']);
 
 Route::get('/history',                    [HistoryController::class, 'index']);
+Route::get('/history/recent',             [HistoryController::class, 'recent']);
 Route::get('/history/firsts',             [HistoryController::class, 'firsts']);
 
 Route::get('/analysis',                   [AnalysisController::class, 'index']);

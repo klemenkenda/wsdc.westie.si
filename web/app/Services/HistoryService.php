@@ -207,6 +207,88 @@ class HistoryService
     }
 
     /**
+     * The most recent events where Slovenian dancers earned points, newest
+     * first. WSDC event ids identify a recurring event rather than one
+     * edition, so events are keyed by id and month. Order within a month is
+     * by event id (descending), as dates have month precision only.
+     *
+     * Each item:
+     * [
+     *   'ym'       => 202608,
+     *   'event'    => 'Lisbon Westie Fest',
+     *   'location' => 'Lisbon, Lisbon, Portugal',
+     *   'url'      => 'https://lisbonwestiefest.com/',
+     *   'points'   => 16,                  // total for our dancers
+     *   'entries'  => [ [wscid, name, role, division, result, points], … ],
+     * ]
+     */
+    public function recentPoints(int $limit = 20): array
+    {
+        $rawData = $this->loadAllRaw();
+        $nameMap = $this->buildNameMap();
+        $events  = [];
+
+        foreach ($rawData as $wscid => $raw) {
+            $wscid = (int) $wscid;
+
+            foreach (['leader', 'follower'] as $role) {
+                $roleData   = $raw[$role] ?? null;
+                $placements = $roleData['placements']['West Coast Swing'] ?? [];
+                $dancer     = $roleData['dancer'] ?? [];
+                $name       = $nameMap[$wscid]
+                    ?? trim(($dancer['first_name'] ?? '') . ' ' . ($dancer['last_name'] ?? ''));
+
+                foreach ($placements as $div => $divData) {
+                    if (!isset(self::DIV_ORDER[$div])) {
+                        continue; // skip non-standard divisions (e.g. SPH)
+                    }
+
+                    foreach ($divData['competitions'] ?? [] as $comp) {
+                        $points = (int) ($comp['points'] ?? 0);
+                        $ym     = $this->toYearMonth($comp['event']['date'] ?? '');
+                        if ($points <= 0 || !$ym) {
+                            continue;
+                        }
+
+                        $eventId = (int) ($comp['event']['id'] ?? 0);
+                        $key     = $ym . '-' . $eventId;
+                        $events[$key] ??= [
+                            'ym'       => $ym,
+                            'id'       => $eventId,
+                            'event'    => $comp['event']['name'] ?? '',
+                            'location' => $comp['event']['location'] ?? '',
+                            'url'      => $comp['event']['url'] ?? '',
+                            'points'   => 0,
+                            'entries'  => [],
+                        ];
+                        $events[$key]['points']   += $points;
+                        $events[$key]['entries'][] = [
+                            'wscid'    => $wscid,
+                            'name'     => $name,
+                            'role'     => $role,
+                            'division' => $div,
+                            'result'   => (string) ($comp['result'] ?? ''),
+                            'points'   => $points,
+                        ];
+                    }
+                }
+            }
+        }
+
+        usort($events, fn(array $a, array $b): int => [$b['ym'], $b['id']] <=> [$a['ym'], $a['id']]);
+        $events = array_slice($events, 0, $limit);
+
+        foreach ($events as &$event) {
+            usort($event['entries'], fn(array $a, array $b): int =>
+                [self::DIV_ORDER[$a['division']], $b['points'], $a['name']]
+                <=> [self::DIV_ORDER[$b['division']], $a['points'], $b['name']]);
+        }
+        unset($event);
+
+        return $events;
+    }
+
+    /**
      * National firsts: for each role and division, the first Slovenian
      * dancer(s) to earn points there. Everyone who scored in that earliest
      * month is listed, since event dates only have month precision.

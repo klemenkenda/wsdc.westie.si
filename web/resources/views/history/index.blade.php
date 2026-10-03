@@ -13,10 +13,7 @@
             <strong>Poudarjeni vnosi</strong> označujejo stanje na 31.&nbsp;december.
         </p>
     </div>
-    <div class="seg">
-        <a href="/history" class="btn active">Posnetki lestvice</a>
-        <a href="/history/firsts" class="btn">Prve točke</a>
-    </div>
+    @include('partials.history-tabs', ['current' => 'snapshots'])
 </div>
 
 @if(empty($snapshots))

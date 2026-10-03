@@ -23,6 +23,14 @@ class HistoryController extends Controller
         ]);
     }
 
+    public function recent(): View
+    {
+        return view('history.recent', [
+            'events'      => $this->history->recentPoints(20),
+            'lastUpdated' => $this->data->lastUpdated(),
+        ]);
+    }
+
     public function firsts(): View
     {
         return view('history.firsts', [

@@ -17,10 +17,7 @@
             <strong>Poudarjeni vnosi</strong> označujejo prve točke sploh ({{ $debutCount }} plesalcev).
         </p>
     </div>
-    <div class="seg">
-        <a href="/history" class="btn">Posnetki lestvice</a>
-        <a href="/history/firsts" class="btn active">Prve točke</a>
-    </div>
+    @include('partials.history-tabs', ['current' => 'firsts'])
 </div>
 
 @if(empty($firsts))
