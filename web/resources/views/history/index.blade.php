@@ -54,7 +54,7 @@
         <div class="d-none d-md-flex align-items-center gap-0 mb-1" style="min-height:1.8rem;">
             <span class="text-muted fw-semibold" style="width:3rem;flex-shrink:0;font-size:.82rem;">{{ $year }}</span>
             @foreach($divOrder as $div)
-            <span style="width:3.6rem;flex-shrink:0;text-align:center;font-size:.65rem;">
+            <span style="width:4.2rem;flex-shrink:0;text-align:center;font-size:.65rem;white-space:nowrap;">
                 @if(!empty($yearDivCounts[$year][$div]))
                     <span class="division-badge div-{{ $div }}">{{ $div }}&thinsp;<strong>{{ $yearDivCounts[$year][$div] }}</strong></span>
                 @endif

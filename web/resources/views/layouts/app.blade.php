@@ -210,6 +210,7 @@
             display: inline-block;
             font-size: .68rem; font-weight: 700; letter-spacing: .05em;
             padding: .22em .6em; border-radius: 999px; line-height: 1.3;
+            white-space: nowrap;
             color: color-mix(in srgb, var(--c) 82%, #000);
             background: color-mix(in srgb, var(--c) 14%, transparent);
             border: 1px solid color-mix(in srgb, var(--c) 32%, transparent);
