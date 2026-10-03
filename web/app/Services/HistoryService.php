@@ -358,19 +358,21 @@ class HistoryService
     }
 
     /**
-     * Points each dancer earned per role in the last $months calendar months,
-     * the current month included. With $weighted, each division counts double
-     * the one below it: NEW ×1, NOV ×2, INT ×4, ADV ×8, ALS ×16, CHA ×32.
+     * Points each dancer earned per role and division in the last $months
+     * calendar months, the current month included.
      *
-     * @return array<int, array{leader:int, follower:int}> keyed by wscid
+     * @return array<int, array{leader: array<string,int>, follower: array<string,int>}> keyed by wscid
      */
-    public function pointsInLastMonths(int $months = 12, bool $weighted = false): array
+    public function pointsInLastMonths(int $months = 12): array
     {
         $cutoff = (int) date('Ym', strtotime('first day of -' . ($months - 1) . ' months'));
         $result = [];
 
         foreach ($this->loadAllRaw() as $wscid => $raw) {
-            $totals = ['leader' => 0, 'follower' => 0];
+            $totals = [
+                'leader'   => array_fill_keys(self::DIVISIONS, 0),
+                'follower' => array_fill_keys(self::DIVISIONS, 0),
+            ];
 
             foreach (['leader', 'follower'] as $role) {
                 $placements = $raw[$role]['placements']['West Coast Swing'] ?? [];
@@ -381,8 +383,7 @@ class HistoryService
                     foreach ($divData['competitions'] ?? [] as $comp) {
                         $ym = $this->toYearMonth($comp['event']['date'] ?? '');
                         if ($ym >= $cutoff) {
-                            $weight = $weighted ? 2 ** (self::DIV_ORDER['NEW'] - self::DIV_ORDER[$div]) : 1;
-                            $totals[$role] += (int) ($comp['points'] ?? 0) * $weight;
+                            $totals[$role][$div] += (int) ($comp['points'] ?? 0);
                         }
                     }
                 }

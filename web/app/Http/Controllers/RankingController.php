@@ -86,26 +86,56 @@ class RankingController extends Controller
     }
 
     /**
-     * Dancers outside the top with the most points in the last 12 months,
-     * weighted so each division counts double the one below it.
-     * $role limits the points to one role; null counts both.
+     * Dancers outside the top with the most points in the last 12 months.
+     * They are ranked by weighted points, each division counting double the
+     * one below it (NEW ×1, NOV ×2, INT ×4, ADV ×8, ALS ×16, CHA ×32), but the
+     * actual points are what is shown. $role limits the points to one role;
+     * null counts both.
      *
-     * @return array<int, array{entry: array, points: int}>
+     * @return array<int, array{entry: array, points: int, top_div: ?string, top_points: int}>
      */
     private function risingStars(array $entries, ?string $role, int $top): array
     {
-        $recent = $this->history->pointsInLastMonths(12, weighted: true);
-        $stars  = [];
+        $divisions = DataService::divisions();          // highest first
+        $recent    = $this->history->pointsInLastMonths(12);
+        $stars     = [];
 
         foreach (array_slice($entries, $this->topCount($entries, $top)) as $e) {
-            $pts = $recent[(int) $e['wscid']] ?? ['leader' => 0, 'follower' => 0];
-            $points = $role ? $pts[$role] : $pts['leader'] + $pts['follower'];
+            $byRole = $recent[(int) $e['wscid']] ?? null;
+            if ($byRole === null) {
+                continue;
+            }
+
+            $byDiv = [];
+            foreach ($divisions as $div) {
+                $byDiv[$div] = $role
+                    ? $byRole[$role][$div]
+                    : $byRole['leader'][$div] + $byRole['follower'][$div];
+            }
+
+            $points   = array_sum($byDiv);
+            $weighted = 0;
+            $topDiv   = null;
+            foreach ($divisions as $i => $div) {
+                $weighted += $byDiv[$div] * 2 ** (count($divisions) - 1 - $i);
+                if ($topDiv === null && $byDiv[$div] > 0) {
+                    $topDiv = $div;
+                }
+            }
+
             if ($points > 0) {
-                $stars[] = ['entry' => $e, 'points' => $points];
+                $stars[] = [
+                    'entry'      => $e,
+                    'points'     => $points,
+                    'weighted'   => $weighted,
+                    'top_div'    => $topDiv,
+                    'top_points' => $topDiv ? $byDiv[$topDiv] : 0,
+                ];
             }
         }
 
-        usort($stars, fn($a, $b) => [$b['points'], $a['entry']['name']] <=> [$a['points'], $b['entry']['name']]);
+        usort($stars, fn($a, $b) => [$b['weighted'], $b['points'], $a['entry']['name']]
+            <=> [$a['weighted'], $a['points'], $b['entry']['name']]);
 
         return array_slice($stars, 0, self::RISING);
     }

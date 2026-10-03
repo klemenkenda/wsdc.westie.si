@@ -2,7 +2,7 @@
 @if(count($rising))
 <div class="mt-4">
     <h2 class="h6 fw-bold mb-1">Vzhajajoče zvezde</h2>
-    <p class="text-muted small mb-3">Največ točk v zadnjih 12 mesecih izven najboljših {{ $top }}. Vsaka višja divizija šteje dvojno (NEW ×1, NOV ×2, INT ×4, ADV ×8 …).</p>
+    <p class="text-muted small mb-3">Največ točk v zadnjih 12 mesecih izven najboljših {{ $top }}. Točke v višji diviziji štejejo dvojno (NEW ×1, NOV ×2, INT ×4, ADV ×8 …).</p>
     <div class="row g-3">
         @foreach($rising as $star)
         @php $e = $star['entry']; @endphp
@@ -21,7 +21,10 @@
                     </div>
                     <div class="text-end">
                         <div class="rising-pts">+{{ $star['points'] }}</div>
-                        <div class="text-muted" style="font-size:.7rem;">uteženih točk</div>
+                        <div class="text-muted" style="font-size:.7rem;">točk</div>
+                        @if($star['top_div'])
+                            <span class="division-badge div-{{ $star['top_div'] }} mt-1">{{ $star['top_div'] }} {{ $star['top_points'] }}</span>
+                        @endif
                     </div>
                 </div>
             </a>
