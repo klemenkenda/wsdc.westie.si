@@ -359,11 +359,12 @@ class HistoryService
 
     /**
      * Points each dancer earned per role in the last $months calendar months,
-     * the current month included.
+     * the current month included. With $weighted, each division counts double
+     * the one below it: NEW ×1, NOV ×2, INT ×4, ADV ×8, ALS ×16, CHA ×32.
      *
      * @return array<int, array{leader:int, follower:int}> keyed by wscid
      */
-    public function pointsInLastMonths(int $months = 12): array
+    public function pointsInLastMonths(int $months = 12, bool $weighted = false): array
     {
         $cutoff = (int) date('Ym', strtotime('first day of -' . ($months - 1) . ' months'));
         $result = [];
@@ -380,7 +381,8 @@ class HistoryService
                     foreach ($divData['competitions'] ?? [] as $comp) {
                         $ym = $this->toYearMonth($comp['event']['date'] ?? '');
                         if ($ym >= $cutoff) {
-                            $totals[$role] += (int) ($comp['points'] ?? 0);
+                            $weight = $weighted ? 2 ** (self::DIV_ORDER['NEW'] - self::DIV_ORDER[$div]) : 1;
+                            $totals[$role] += (int) ($comp['points'] ?? 0) * $weight;
                         }
                     }
                 }

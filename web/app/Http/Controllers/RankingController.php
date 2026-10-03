@@ -86,14 +86,15 @@ class RankingController extends Controller
     }
 
     /**
-     * Dancers outside the top with the most points in the last 12 months.
+     * Dancers outside the top with the most points in the last 12 months,
+     * weighted so each division counts double the one below it.
      * $role limits the points to one role; null counts both.
      *
      * @return array<int, array{entry: array, points: int}>
      */
     private function risingStars(array $entries, ?string $role, int $top): array
     {
-        $recent = $this->history->pointsInLastMonths(12);
+        $recent = $this->history->pointsInLastMonths(12, weighted: true);
         $stars  = [];
 
         foreach (array_slice($entries, $this->topCount($entries, $top)) as $e) {
