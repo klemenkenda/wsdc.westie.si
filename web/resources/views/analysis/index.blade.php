@@ -159,10 +159,10 @@
     <h2 class="section-title">Plesalci skozi čas</h2>
     <div class="d-flex flex-wrap gap-2">
         <div class="seg" role="group" aria-label="Posnetki">
-            <input type="radio" class="btn-check" name="snapRange" id="snapAll" value="all" checked autocomplete="off">
-            <label class="btn" for="snapAll">Vsi posnetki</label>
-            <input type="radio" class="btn-check" name="snapRange" id="snapYe" value="yearend" autocomplete="off">
+            <input type="radio" class="btn-check" name="snapRange" id="snapYe" value="yearend" checked autocomplete="off">
             <label class="btn" for="snapYe">Samo konec leta</label>
+            <input type="radio" class="btn-check" name="snapRange" id="snapAll" value="all" autocomplete="off">
+            <label class="btn" for="snapAll">Vsi posnetki</label>
         </div>
         <div class="seg" role="group" aria-label="Prikaz">
             <input type="radio" class="btn-check" name="fillMode" id="fillNo" value="false" checked autocomplete="off">
@@ -426,7 +426,7 @@
     });
 
     // ── Dancers over time (snapshots) ──────────────────────────────────────
-    const snap = { yearEndOnly: false, area: false, hiddenDiv: new Set(), hiddenRole: new Set(), div: null, role: null };
+    const snap = { yearEndOnly: true, area: false, hiddenDiv: new Set(), hiddenRole: new Set(), div: null, role: null };
 
     function snapSlice() {
         const idx = S.isYearEnd.map((v, i) => (!snap.yearEndOnly || v) ? i : -1).filter(i => i >= 0);

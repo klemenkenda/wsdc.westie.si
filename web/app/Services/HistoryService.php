@@ -9,7 +9,8 @@ namespace App\Services;
  *
  * Snapshot dates:
  *  - One per unique event month/year found across all raw files.
- *  - One extra "Dec 31, YYYY" snapshot per calendar year present in the data.
+ *  - One extra "Dec 31, YYYY" snapshot per calendar year from the first to the
+ *    last year in the data, including years without events.
  *    If December of that year already has an event, it is simply flagged as a
  *    year-end snapshot rather than duplicated.
  *
@@ -87,8 +88,10 @@ class HistoryService
             $allDates[$ym] = ['label' => $label, 'is_year_end' => false];
         }
 
-        $years = array_unique(array_map(fn($ym) => (int) ($ym / 100), array_keys($eventYms)));
-        foreach ($years as $year) {
+        // Every year from the first to the last, so a year without events
+        // (e.g. 2021) still gets its year-end snapshot.
+        $eventYears = array_map(fn($ym) => intdiv($ym, 100), array_keys($eventYms));
+        foreach (range(min($eventYears), max($eventYears)) as $year) {
             $ym = $year * 100 + 12; // December of that year
             if (isset($allDates[$ym])) {
                 // Already an event in December — just mark it as year-end
