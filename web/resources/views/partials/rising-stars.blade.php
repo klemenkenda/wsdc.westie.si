@@ -21,10 +21,9 @@
                     </div>
                     <div class="text-end">
                         <div class="rising-pts">+{{ $star['points'] }}</div>
-                        <div class="text-muted" style="font-size:.7rem;">točk</div>
-                        @if($star['top_div'])
-                            <span class="division-badge div-{{ $star['top_div'] }} mt-1">{{ $star['top_div'] }} {{ $star['top_points'] }}</span>
-                        @endif
+                        <div class="text-muted text-nowrap" style="font-size:.7rem;">
+                            točk{{ $star['top_div'] ? ' · ' . $star['top_div'] . ' ' . $star['top_points'] : '' }}
+                        </div>
                     </div>
                 </div>
             </a>
