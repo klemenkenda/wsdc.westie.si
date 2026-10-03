@@ -385,41 +385,35 @@
         const multi = series.length > 1;
         const labels = P.years.map(String);
 
-        pts.bar = new Chart(document.getElementById('pointsBar'), {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: series.map(s => ({
-                    label: s.label, _key: s.key, _color: s.color, data: s.data,
-                    hidden: pts.hidden.has(s.key),
-                    backgroundColor: s.color,
-                    hoverBackgroundColor: s.color,
-                    borderColor: c.surface,
-                    borderWidth: multi ? { top: 2 } : 0,
-                    borderSkipped: 'start',
-                    borderRadius: 3,
-                    maxBarThickness: 28,
-                    categoryPercentage: .72,
-                    barPercentage: .92,
-                })),
-            },
-            options: Object.assign(baseOptions(c, true, true), {}),
-            plugins: [totalLabels],
-        });
-        pts.bar.options.plugins.totalLabels = { enabled: true, color: c.text };
-        pts.bar.update('none');
+        // Stacked columns: segments separated by a 2px surface-coloured gap.
+        const barDatasets = (valuesOf) => series.map(s => ({
+            label: s.label, _key: s.key, _color: s.color, data: valuesOf(s),
+            hidden: pts.hidden.has(s.key),
+            backgroundColor: s.color,
+            hoverBackgroundColor: s.color,
+            borderColor: c.surface,
+            borderWidth: multi ? { top: 2 } : 0,
+            borderSkipped: 'start',
+            borderRadius: 3,
+            maxBarThickness: 28,
+            categoryPercentage: .72,
+            barPercentage: .92,
+        }));
 
-        pts.cum = new Chart(document.getElementById('pointsCum'), {
-            type: 'line',
-            data: {
-                labels,
-                datasets: series.map(s => areaDataset(s, c, multi, cumsum(s.data), pts.hidden.has(s.key))),
-            },
-            options: baseOptions(c, multi, true),
-            plugins: [totalLabels],
-        });
-        pts.cum.options.plugins.totalLabels = { enabled: true, lastOnly: true, color: c.text };
-        pts.cum.update('none');
+        const barChart = (id, valuesOf) => {
+            const ch = new Chart(document.getElementById(id), {
+                type: 'bar',
+                data: { labels, datasets: barDatasets(valuesOf) },
+                options: baseOptions(c, true, true),
+                plugins: [totalLabels],
+            });
+            ch.options.plugins.totalLabels = { enabled: true, color: c.text };
+            ch.update('none');
+            return ch;
+        };
+
+        pts.bar = barChart('pointsBar', s => s.data);
+        pts.cum = barChart('pointsCum', s => cumsum(s.data));
 
         // Legend reads top division first.
         const legendItems = pts.mode === 'division' ? series.slice().reverse() : series;
