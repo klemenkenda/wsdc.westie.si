@@ -21,12 +21,6 @@ class RankingController extends Controller
     private const TOP_ROLE = 5;
     private const RISING = 3;
 
-    /** Home page: absolute ranking by default. */
-    public function home(): View
-    {
-        return $this->absolute();
-    }
-
     /** Leaders: primary-role only or primary+secondary. */
     public function leaders(string $scope = 'primary'): View
     {

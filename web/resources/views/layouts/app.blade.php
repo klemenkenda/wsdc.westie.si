@@ -309,9 +309,9 @@
         <div class="collapse navbar-collapse" id="nav">
             @php
                 $navItems = [
-                    ['/', 'Skupna lestvica', request()->is('/') || request()->is('ranking*')],
+                    ['/', 'Analiza', request()->is('/') || request()->is('analysis')],
+                    ['/ranking/absolute', 'Skupna lestvica', request()->is('ranking*')],
                     ['/history', 'Zgodovina', request()->is('history*')],
-                    ['/analysis', 'Analiza', request()->is('analysis')],
                 ];
             @endphp
             <ul class="navbar-nav mx-lg-auto gap-lg-1 py-2 py-lg-0">

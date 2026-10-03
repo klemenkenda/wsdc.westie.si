@@ -1,7 +1,5 @@
 {{-- Dancers outside the top 10 with the most points in the last 12 months. --}}
 @php
-    $divNames = ['CHA' => 'champion', 'ALS' => 'all-star', 'ADV' => 'advanced',
-                 'INT' => 'intermediate', 'NOV' => 'novice', 'NEW' => 'newcomer'];
     // Slovenian dual and plural: 1 točka, 2 točki, 3–4 točke, 5+ točk (by the last two digits).
     $tock = fn(int $n) => match (true) {
         $n % 100 === 1                  => 'točka',
@@ -31,10 +29,10 @@
                         </div>
                     </div>
                     <div class="text-end">
-                        <div class="rising-pts text-nowrap">+{{ $star['points'] }} <span class="rising-unit">{{ $tock($star['points']) }}</span></div>
+                        <div class="rising-pts text-nowrap">+{{ $star['points'] }}</div>
                         @if($star['top_div'])
                         <div class="text-muted text-nowrap" style="font-size:.7rem;">
-                            {{ $star['top_points'] }} {{ $divNames[$star['top_div']] }} {{ $tock($star['top_points']) }}
+                            +{{ $star['top_points'] }} {{ $star['top_div'] }} {{ $tock($star['top_points']) }}
                         </div>
                         @endif
                     </div>
@@ -55,6 +53,5 @@
     }
     [data-bs-theme="dark"] .rising-icon { color: #fde68a; background: rgba(245, 158, 11, .18); }
     .rising-pts { font-size: 1.3rem; font-weight: 750; color: var(--brand); line-height: 1.1; }
-    .rising-unit { font-size: .75rem; font-weight: 600; color: var(--text-muted); }
 </style>
 @endif

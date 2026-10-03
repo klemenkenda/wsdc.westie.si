@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\DataService;
 use App\Services\HistoryService;
 use Carbon\Carbon;
 use Illuminate\View\View;
@@ -12,7 +13,10 @@ class AnalysisController extends Controller
 {
     private const DIVISIONS = ['CHA', 'ALS', 'ADV', 'INT', 'NOV', 'NEW'];
 
-    public function __construct(private HistoryService $history) {}
+    public function __construct(
+        private HistoryService $history,
+        private DataService    $data,
+    ) {}
 
     public function index(): View
     {
@@ -22,7 +26,11 @@ class AnalysisController extends Controller
         $chartData  = $this->buildChartData($snapshots);
         $pointsData = $this->history->pointsByYear();
 
-        return view('analysis.index', compact('chartData', 'pointsData'));
+        return view('analysis.index', [
+            'chartData'   => $chartData,
+            'pointsData'  => $pointsData,
+            'lastUpdated' => $this->data->lastUpdated(),
+        ]);
     }
 
     private function buildChartData(array $snapshots): array

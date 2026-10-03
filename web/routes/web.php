@@ -8,7 +8,7 @@ use App\Http\Controllers\RankingController;
 use App\Http\Controllers\ScraperController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/',                           [RankingController::class, 'home']);
+Route::get('/',                           [AnalysisController::class, 'index']);
 
 Route::get('/ranking/leaders',            [RankingController::class, 'leaders'])->defaults('scope', 'primary');
 Route::get('/ranking/leaders/all',        [RankingController::class, 'leaders'])->defaults('scope', 'all');

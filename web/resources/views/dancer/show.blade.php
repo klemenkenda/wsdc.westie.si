@@ -6,7 +6,7 @@
 
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/">Lestvice</a></li>
+        <li class="breadcrumb-item"><a href="/ranking/absolute">Lestvice</a></li>
         <li class="breadcrumb-item active">{{ $name }}</li>
     </ol>
 </nav>
