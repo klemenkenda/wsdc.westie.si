@@ -27,6 +27,51 @@
     <div class="alert alert-info">Zgodovina še ni na voljo.</div>
 @else
 
+<h2 class="h5 fw-bold mb-2">Prve točke v Sloveniji</h2>
+<p class="text-muted small mb-3">Prvi slovenski plesalci s točkami v posamezni diviziji. Če je bilo v istem mesecu več prvih, so navedeni vsi.</p>
+<div class="row g-3 mb-5">
+    @foreach(['leader' => 'Leaders', 'follower' => 'Followers'] as $role => $roleLabel)
+    <div class="col-lg-6">
+        <div class="card table-card h-100">
+            <div class="card-header py-2">
+                <span class="role-badge role-{{ $role }}">{{ $roleLabel }}</span>
+            </div>
+            <div class="table-responsive">
+            <table class="table table-sm mb-0 align-middle" style="font-size:.88rem;">
+                <tbody>
+                @foreach($national[$role] as $div => $first)
+                    <tr>
+                        <td class="ps-3 py-2" style="width:4rem;">
+                            <span class="division-badge div-{{ $div }}">{{ $div }}</span>
+                        </td>
+                        @if($first === null)
+                            <td class="py-2 text-muted" colspan="2">Še nihče</td>
+                        @else
+                            <td class="py-2 text-muted text-nowrap" style="width:6rem;">
+                                {{ \Carbon\Carbon::createFromFormat('Ym', (string) $first['ym'])->format('M Y') }}
+                            </td>
+                            <td class="pe-3 py-2">
+                                @foreach($first['entries'] as $e)
+                                <div>
+                                    <a href="/dancer/{{ $e['wscid'] }}" class="dancer-link fw-bold">{{ $e['name'] }}</a>
+                                    <span class="text-muted small">
+                                        · {{ $e['event'] }} · {{ $e['result'] ?: '—' }}, {{ $e['points'] }}&nbsp;t.
+                                    </span>
+                                </div>
+                                @endforeach
+                            </td>
+                        @endif
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+    @endforeach
+</div>
+
+<h2 class="h5 fw-bold mb-2">Prvi nastopi po plesalcih</h2>
 <div class="seg mb-3" id="firstsFilter">
     <button type="button" class="btn active" data-filter="all">Vse divizije</button>
     <button type="button" class="btn" data-filter="debut">Samo prvi nastop</button>
@@ -41,7 +86,7 @@
 
 @foreach($byYear as $year => $months)
 <div class="firsts-year mb-4">
-    <h2 class="h5 fw-bold mb-2">{{ $year }}</h2>
+    <h3 class="h6 fw-bold text-muted mb-2">{{ $year }}</h3>
     <div class="card table-card">
     <div class="table-responsive">
     <table class="table table-hover table-sm mb-0 align-middle" style="font-size:.88rem;">

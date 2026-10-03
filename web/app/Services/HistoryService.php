@@ -203,6 +203,72 @@ class HistoryService
         return array_reverse($items);
     }
 
+    /**
+     * National firsts: for each role and division, the first Slovenian
+     * dancer(s) to earn points there. Everyone who scored in that earliest
+     * month is listed, since event dates only have month precision.
+     *
+     * [
+     *   'leader'   => ['CHA' => null, 'ALS' => ['ym' => 201905, 'entries' => [ … ]], … ],
+     *   'follower' => [ … ],
+     * ]
+     *
+     * Each entry: wscid, name, event, location, result, points.
+     */
+    public function nationalFirsts(): array
+    {
+        $rawData = $this->loadAllRaw();
+        $nameMap = $this->buildNameMap();
+        $result  = [];
+
+        foreach (['leader', 'follower'] as $role) {
+            $result[$role] = array_fill_keys(self::DIVISIONS, null);
+
+            foreach ($rawData as $wscid => $raw) {
+                $wscid      = (int) $wscid;
+                $roleData   = $raw[$role] ?? null;
+                $placements = $roleData['placements']['West Coast Swing'] ?? [];
+                $dancer     = $roleData['dancer'] ?? [];
+                $name       = $nameMap[$wscid]
+                    ?? trim(($dancer['first_name'] ?? '') . ' ' . ($dancer['last_name'] ?? ''));
+
+                foreach ($placements as $div => $divData) {
+                    if (!array_key_exists($div, $result[$role])) {
+                        continue; // skip non-standard divisions (e.g. SPH)
+                    }
+
+                    foreach ($divData['competitions'] ?? [] as $comp) {
+                        $points = (int) ($comp['points'] ?? 0);
+                        $ym     = $this->toYearMonth($comp['event']['date'] ?? '');
+                        if ($points <= 0 || !$ym) {
+                            continue;
+                        }
+
+                        $current = $result[$role][$div];
+                        if ($current !== null && $ym > $current['ym']) {
+                            continue;
+                        }
+                        if ($current === null || $ym < $current['ym']) {
+                            $current = ['ym' => $ym, 'entries' => []];
+                        }
+
+                        $current['entries'][] = [
+                            'wscid'    => $wscid,
+                            'name'     => $name,
+                            'event'    => $comp['event']['name'] ?? '',
+                            'location' => $comp['event']['location'] ?? '',
+                            'result'   => (string) ($comp['result'] ?? ''),
+                            'points'   => $points,
+                        ];
+                        $result[$role][$div] = $current;
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
     // -----------------------------------------------------------------------
     // Internal
     // -----------------------------------------------------------------------

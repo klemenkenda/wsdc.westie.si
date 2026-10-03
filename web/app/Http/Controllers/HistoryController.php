@@ -27,6 +27,7 @@ class HistoryController extends Controller
     {
         return view('history.firsts', [
             'firsts'      => $this->history->firsts(),
+            'national'    => $this->history->nationalFirsts(),
             'lastUpdated' => $this->data->lastUpdated(),
         ]);
     }
