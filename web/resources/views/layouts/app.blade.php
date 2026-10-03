@@ -311,7 +311,7 @@
                 $navItems = [
                     ['/', 'Analiza', request()->is('/') || request()->is('analysis')],
                     ['/ranking/absolute', 'Skupna lestvica', request()->is('ranking*')],
-                    ['/history', 'Zgodovina', request()->is('history*')],
+                    ['/history/firsts', 'Zgodovina', request()->is('history*')],
                 ];
             @endphp
             <ul class="navbar-nav mx-lg-auto gap-lg-1 py-2 py-lg-0">
