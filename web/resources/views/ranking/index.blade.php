@@ -8,7 +8,7 @@
     <div>
         <div class="eyebrow">Lestvica po vlogi</div>
         <h1>{{ $roleLabel }} lestvica</h1>
-        <p>{{ count($entries) }} plesalcev, razvrščenih po WSDC točkah.</p>
+        <p>Najboljših 10 po WSDC točkah.</p>
     </div>
     @include('partials.ranking-tabs', ['current' => $role])
 </div>
@@ -46,7 +46,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach($entries as $e)
+        @foreach(array_slice($entries, 0, $topCount) as $e)
         <tr>
             <td class="col-rank"><span class="rank-num {{ $e['rank'] <= 3 ? 'rank-' . $e['rank'] : '' }}">{{ $e['rank'] }}</span></td>
             <td>
@@ -95,6 +95,9 @@
 </table>
 </div>
 </div>
+
+@include('partials.rising-stars', ['rising' => $rising])
+@include('partials.ranking-rest', ['entries' => $entries, 'topCount' => $topCount])
 @endif
 
 @endsection

@@ -8,7 +8,7 @@
     <div>
         <div class="eyebrow">Slovenska WCS skupnost</div>
         <h1>Skupna lestvica</h1>
-        <p>Vsi plesalci razvrščeni ne glede na vlogo. Vsak je zastopan s svojo najboljšo vlogo.</p>
+        <p>Najboljših 10 plesalcev ne glede na vlogo. Vsak je zastopan s svojo najboljšo vlogo.</p>
     </div>
     @include('partials.ranking-tabs', ['current' => 'absolute'])
 </div>
@@ -36,7 +36,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach($entries as $e)
+        @foreach(array_slice($entries, 0, $topCount) as $e)
         <tr>
             <td class="col-rank"><span class="rank-num {{ $e['rank'] <= 3 ? 'rank-' . $e['rank'] : '' }}">{{ $e['rank'] }}</span></td>
             <td>
@@ -88,6 +88,9 @@
 </table>
 </div>
 </div>
+
+@include('partials.rising-stars', ['rising' => $rising])
+@include('partials.ranking-rest', ['entries' => $entries, 'topCount' => $topCount])
 @endif
 
 @endsection

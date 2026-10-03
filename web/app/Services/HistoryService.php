@@ -358,6 +358,41 @@ class HistoryService
     }
 
     /**
+     * Points each dancer earned per role in the last $months calendar months,
+     * the current month included.
+     *
+     * @return array<int, array{leader:int, follower:int}> keyed by wscid
+     */
+    public function pointsInLastMonths(int $months = 12): array
+    {
+        $cutoff = (int) date('Ym', strtotime('first day of -' . ($months - 1) . ' months'));
+        $result = [];
+
+        foreach ($this->loadAllRaw() as $wscid => $raw) {
+            $totals = ['leader' => 0, 'follower' => 0];
+
+            foreach (['leader', 'follower'] as $role) {
+                $placements = $raw[$role]['placements']['West Coast Swing'] ?? [];
+                foreach ($placements as $div => $divData) {
+                    if (!isset(self::DIV_ORDER[$div])) {
+                        continue; // skip non-standard divisions (e.g. SPH)
+                    }
+                    foreach ($divData['competitions'] ?? [] as $comp) {
+                        $ym = $this->toYearMonth($comp['event']['date'] ?? '');
+                        if ($ym >= $cutoff) {
+                            $totals[$role] += (int) ($comp['points'] ?? 0);
+                        }
+                    }
+                }
+            }
+
+            $result[(int) $wscid] = $totals;
+        }
+
+        return $result;
+    }
+
+    /**
      * National firsts: for each role and division, the first Slovenian
      * dancer(s) to earn points there. Everyone who scored in that earliest
      * month is listed, since event dates only have month precision.

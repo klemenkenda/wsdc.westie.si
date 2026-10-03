@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\DataService;
+use App\Services\HistoryService;
 use App\Services\RankingService;
 use Illuminate\View\View;
 
@@ -13,7 +14,11 @@ class RankingController extends Controller
     public function __construct(
         private DataService   $data,
         private RankingService $ranking,
+        private HistoryService $history,
     ) {}
+
+    private const TOP = 10;
+    private const RISING = 3;
 
     /** Home page: absolute ranking by default. */
     public function home(): View
@@ -30,6 +35,8 @@ class RankingController extends Controller
 
         return view('ranking.index', [
             'entries'     => $entries,
+            'topCount'    => $this->topCount($entries),
+            'rising'      => $this->risingStars($entries, 'leader'),
             'roleLabel'   => 'Leaders',
             'role'        => 'leader',
             'scope'       => $scope,
@@ -46,6 +53,8 @@ class RankingController extends Controller
 
         return view('ranking.index', [
             'entries'     => $entries,
+            'topCount'    => $this->topCount($entries),
+            'rising'      => $this->risingStars($entries, 'follower'),
             'roleLabel'   => 'Followers',
             'role'        => 'follower',
             'scope'       => $scope,
@@ -56,9 +65,43 @@ class RankingController extends Controller
     /** Absolute ranking regardless of role. */
     public function absolute(): View
     {
+        $entries = $this->ranking->absolute();
+
         return view('ranking.absolute', [
-            'entries'     => $this->ranking->absolute(),
+            'entries'     => $entries,
+            'topCount'    => $this->topCount($entries),
+            'rising'      => $this->risingStars($entries, null),
             'lastUpdated' => $this->data->lastUpdated(),
         ]);
+    }
+
+    /** Rows in the top of the table: the top 10, plus anyone tied for 10th. */
+    private function topCount(array $entries): int
+    {
+        return count(array_filter($entries, fn($e) => $e['rank'] <= self::TOP));
+    }
+
+    /**
+     * Dancers outside the top with the most points in the last 12 months.
+     * $role limits the points to one role; null counts both.
+     *
+     * @return array<int, array{entry: array, points: int}>
+     */
+    private function risingStars(array $entries, ?string $role): array
+    {
+        $recent = $this->history->pointsInLastMonths(12);
+        $stars  = [];
+
+        foreach (array_slice($entries, $this->topCount($entries)) as $e) {
+            $pts = $recent[(int) $e['wscid']] ?? ['leader' => 0, 'follower' => 0];
+            $points = $role ? $pts[$role] : $pts['leader'] + $pts['follower'];
+            if ($points > 0) {
+                $stars[] = ['entry' => $e, 'points' => $points];
+            }
+        }
+
+        usort($stars, fn($a, $b) => [$b['points'], $a['entry']['name']] <=> [$a['points'], $b['entry']['name']]);
+
+        return array_slice($stars, 0, self::RISING);
     }
 }
