@@ -118,6 +118,91 @@ class HistoryService
         return $snapshots;
     }
 
+    /**
+     * First appearances, newest-first: one item per dancer/role/division
+     * marking the first competition in which they earned a result there.
+     * The dancer's earliest appearance overall is flagged as 'is_debut'.
+     *
+     * Event dates only have month precision, so ties within a month are
+     * broken by division (lowest first).
+     *
+     * Each item:
+     * [
+     *   'ym'       => 202408,
+     *   'wscid'    => 12345,
+     *   'name'     => 'Ana Novak',
+     *   'role'     => 'follower',
+     *   'division' => 'NOV',
+     *   'event'    => 'Budafest',
+     *   'location' => 'Budapest, Hungary',
+     *   'result'   => '3',
+     *   'points'   => 6,
+     *   'is_debut' => true,
+     * ]
+     */
+    public function firsts(): array
+    {
+        $rawData = $this->loadAllRaw();
+        $nameMap = $this->buildNameMap();
+        $items   = [];
+
+        foreach ($rawData as $wscid => $raw) {
+            $wscid = (int) $wscid;
+
+            foreach (['leader', 'follower'] as $role) {
+                $roleData   = $raw[$role] ?? null;
+                $placements = $roleData['placements']['West Coast Swing'] ?? [];
+                $dancer     = $roleData['dancer'] ?? [];
+                $name       = $nameMap[$wscid]
+                    ?? trim(($dancer['first_name'] ?? '') . ' ' . ($dancer['last_name'] ?? ''));
+
+                foreach ($placements as $div => $divData) {
+                    if (!isset(self::DIV_ORDER[$div])) {
+                        continue; // skip non-standard divisions (e.g. SPH)
+                    }
+
+                    $first = null;
+                    foreach ($divData['competitions'] ?? [] as $comp) {
+                        $ym = $this->toYearMonth($comp['event']['date'] ?? '');
+                        if ($ym && ($first === null || $ym < $first['ym'])) {
+                            $first = [
+                                'ym'       => $ym,
+                                'wscid'    => $wscid,
+                                'name'     => $name,
+                                'role'     => $role,
+                                'division' => $div,
+                                'event'    => $comp['event']['name'] ?? '',
+                                'location' => $comp['event']['location'] ?? '',
+                                'result'   => (string) ($comp['result'] ?? ''),
+                                'points'   => (int) ($comp['points'] ?? 0),
+                                'is_debut' => false,
+                            ];
+                        }
+                    }
+
+                    if ($first !== null) {
+                        $items[] = $first;
+                    }
+                }
+            }
+        }
+
+        // Oldest first, lowest division first, to pick each dancer's debut.
+        usort($items, fn(array $a, array $b): int =>
+            [$a['ym'], -self::DIV_ORDER[$a['division']]] <=> [$b['ym'], -self::DIV_ORDER[$b['division']]]);
+
+        $seen = [];
+        foreach ($items as &$item) {
+            if (!isset($seen[$item['wscid']])) {
+                $item['is_debut']       = true;
+                $seen[$item['wscid']] = true;
+            }
+        }
+        unset($item);
+
+        return array_reverse($items);
+    }
+
     // -----------------------------------------------------------------------
     // Internal
     // -----------------------------------------------------------------------

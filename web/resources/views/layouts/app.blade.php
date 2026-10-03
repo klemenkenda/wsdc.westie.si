@@ -304,7 +304,7 @@
                     ['/', 'Skupna lestvica', request()->is('/') || request()->is('ranking/absolute')],
                     ['/ranking/leaders/all', 'Leaders', request()->is('ranking/leaders*')],
                     ['/ranking/followers/all', 'Followers', request()->is('ranking/followers*')],
-                    ['/history', 'Zgodovina', request()->is('history')],
+                    ['/history', 'Zgodovina', request()->is('history*')],
                     ['/analysis', 'Analiza', request()->is('analysis')],
                 ];
             @endphp

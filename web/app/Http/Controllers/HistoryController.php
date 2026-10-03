@@ -22,4 +22,12 @@ class HistoryController extends Controller
             'lastUpdated' => $this->data->lastUpdated(),
         ]);
     }
+
+    public function firsts(): View
+    {
+        return view('history.firsts', [
+            'firsts'      => $this->history->firsts(),
+            'lastUpdated' => $this->data->lastUpdated(),
+        ]);
+    }
 }

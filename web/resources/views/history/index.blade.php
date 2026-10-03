@@ -4,13 +4,19 @@
 
 @section('content')
 
-<div class="page-header">
-    <div class="eyebrow">Skozi čas</div>
-    <h1>Zgodovina lestvice</h1>
-    <p>
-        Posnetki skupne lestvice ob vsakem tekmovalnem datumu.
-        <strong>Poudarjeni vnosi</strong> označujejo stanje na 31.&nbsp;december.
-    </p>
+<div class="page-header d-flex align-items-end justify-content-between flex-wrap gap-3">
+    <div>
+        <div class="eyebrow">Skozi čas</div>
+        <h1>Zgodovina lestvice</h1>
+        <p>
+            Posnetki skupne lestvice ob vsakem tekmovalnem datumu.
+            <strong>Poudarjeni vnosi</strong> označujejo stanje na 31.&nbsp;december.
+        </p>
+    </div>
+    <div class="seg">
+        <a href="/history" class="btn active">Posnetki lestvice</a>
+        <a href="/history/firsts" class="btn">Prvi nastopi</a>
+    </div>
 </div>
 
 @if(empty($snapshots))
