@@ -24,7 +24,6 @@
     .section-title { font-size: 1.05rem; font-weight: 700; margin: 0; }
     .chart-box { position: relative; height: 300px; }
     .chart-box.tall { height: 340px; }
-    .chart-box.short { height: 260px; }
 
     .legend-row { display: flex; flex-wrap: wrap; gap: .35rem; }
     .legend-pill {
@@ -190,7 +189,7 @@
         <div class="legend-row ms-auto" id="roleLegend"></div>
     </div>
     <div class="card-body">
-        <div class="chart-box short"><canvas id="roleChart" role="img" aria-label="Število leaderjev in followerjev skozi čas"></canvas></div>
+        <div class="chart-box tall"><canvas id="roleChart" role="img" aria-label="Število leaderjev in followerjev skozi čas"></canvas></div>
     </div>
 </div>
 
@@ -489,10 +488,12 @@
             data: { labels: d.labels, datasets: snapDatasets(divSeries, c, d, snap.hiddenDiv) },
             options: snapOptions(c, d),
         });
+        const roleOptions = snapOptions(c, d);
+        roleOptions.scales.y.ticks.maxTicksLimit = 4;
         snap.role = new Chart(document.getElementById('roleChart'), {
             type: 'line',
             data: { labels: d.labels, datasets: snapDatasets(roleSeries, c, d, snap.hiddenRole) },
-            options: snapOptions(c, d),
+            options: roleOptions,
         });
 
         renderLegend(document.getElementById('divLegend'), divSeries.slice().reverse(), snap.hiddenDiv,
