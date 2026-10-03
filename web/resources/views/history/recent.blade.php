@@ -20,7 +20,7 @@
 <div class="d-flex flex-column gap-3">
 @foreach($events as $ev)
     <div class="card table-card">
-        <div class="card-header d-flex align-items-baseline justify-content-between flex-wrap gap-2">
+        <div class="card-header d-flex align-items-baseline justify-content-between flex-wrap gap-2" style="background:var(--surface-2);">
             <div>
                 @if($ev['url'])
                     <a href="{{ $ev['url'] }}" class="text-reset" target="_blank" rel="noopener">{{ $ev['event'] }}</a>
