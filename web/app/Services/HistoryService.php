@@ -119,8 +119,8 @@ class HistoryService
     }
 
     /**
-     * First appearances, newest-first: one item per dancer/role/division
-     * marking the first competition in which they earned a result there.
+     * First points, newest-first: one item per dancer/role/division
+     * marking the first competition in which they earned points there.
      * The dancer's earliest appearance overall is flagged as 'is_debut'.
      *
      * Event dates only have month precision, so ties within a month are
@@ -164,6 +164,9 @@ class HistoryService
                     $first = null;
                     foreach ($divData['competitions'] ?? [] as $comp) {
                         $ym = $this->toYearMonth($comp['event']['date'] ?? '');
+                        if ((int) ($comp['points'] ?? 0) <= 0) {
+                            continue;
+                        }
                         if ($ym && ($first === null || $ym < $first['ym'])) {
                             $first = [
                                 'ym'       => $ym,

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Prvi nastopi')
+@section('title', 'Prve točke')
 
 @section('content')
 
@@ -11,15 +11,15 @@
 <div class="page-header d-flex align-items-end justify-content-between flex-wrap gap-3">
     <div>
         <div class="eyebrow">Skozi čas</div>
-        <h1>Prvi nastopi</h1>
+        <h1>Prve točke</h1>
         <p>
-            Prvi rezultat vsakega plesalca v posamezni diviziji in vlogi.
-            <strong>Poudarjeni vnosi</strong> označujejo prvi nastop sploh ({{ $debutCount }} plesalcev).
+            Prve točke vsakega plesalca v posamezni diviziji in vlogi.
+            <strong>Poudarjeni vnosi</strong> označujejo prve točke sploh ({{ $debutCount }} plesalcev).
         </p>
     </div>
     <div class="seg">
         <a href="/history" class="btn">Posnetki lestvice</a>
-        <a href="/history/firsts" class="btn active">Prvi nastopi</a>
+        <a href="/history/firsts" class="btn active">Prve točke</a>
     </div>
 </div>
 
@@ -71,10 +71,10 @@
     @endforeach
 </div>
 
-<h2 class="h5 fw-bold mb-2">Prvi nastopi po plesalcih</h2>
+<h2 class="h5 fw-bold mb-2">Prve točke po plesalcih</h2>
 <div class="seg mb-3" id="firstsFilter">
     <button type="button" class="btn active" data-filter="all">Vse divizije</button>
-    <button type="button" class="btn" data-filter="debut">Samo prvi nastop</button>
+    <button type="button" class="btn" data-filter="debut">Samo prve točke sploh</button>
 </div>
 
 @php
@@ -111,7 +111,7 @@
                 <td class="py-2">
                     <a href="/dancer/{{ $f['wscid'] }}" class="dancer-link {{ $f['is_debut'] ? 'fw-bold' : '' }}">{{ $f['name'] }}</a>
                     @if($f['is_debut'])
-                        <span class="badge rounded-pill bg-primary ms-1" style="font-size:.65rem;">Prvi nastop</span>
+                        <span class="badge rounded-pill bg-primary ms-1" style="font-size:.65rem;">Prve točke</span>
                     @endif
                 </td>
                 <td class="py-2">

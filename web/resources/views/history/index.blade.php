@@ -15,7 +15,7 @@
     </div>
     <div class="seg">
         <a href="/history" class="btn active">Posnetki lestvice</a>
-        <a href="/history/firsts" class="btn">Prvi nastopi</a>
+        <a href="/history/firsts" class="btn">Prve točke</a>
     </div>
 </div>
 
