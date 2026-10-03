@@ -289,6 +289,75 @@ class HistoryService
     }
 
     /**
+     * Points earned by all Slovenian dancers per calendar year, from the
+     * first year with points to the last, with empty years filled in.
+     *
+     * [
+     *   'years'     => [2013, 2014, …],
+     *   'divisions' => ['CHA' => [0, 0, …], …],  // points per year
+     *   'roles'     => ['leader' => […], 'follower' => […]],
+     *   'total'     => [3, 12, …],
+     *   'dancers'   => [2, 5, …],                 // dancers who scored that year
+     * ]
+     */
+    public function pointsByYear(): array
+    {
+        $byYear = [];
+
+        foreach ($this->loadAllRaw() as $wscid => $raw) {
+            foreach (['leader', 'follower'] as $role) {
+                $placements = $raw[$role]['placements']['West Coast Swing'] ?? [];
+
+                foreach ($placements as $div => $divData) {
+                    if (!isset(self::DIV_ORDER[$div])) {
+                        continue; // skip non-standard divisions (e.g. SPH)
+                    }
+
+                    foreach ($divData['competitions'] ?? [] as $comp) {
+                        $points = (int) ($comp['points'] ?? 0);
+                        $ym     = $this->toYearMonth($comp['event']['date'] ?? '');
+                        if ($points <= 0 || !$ym) {
+                            continue;
+                        }
+
+                        $year = intdiv($ym, 100);
+                        $byYear[$year]['divisions'][$div] = ($byYear[$year]['divisions'][$div] ?? 0) + $points;
+                        $byYear[$year]['roles'][$role]    = ($byYear[$year]['roles'][$role] ?? 0) + $points;
+                        $byYear[$year]['dancers'][(int) $wscid] = true;
+                    }
+                }
+            }
+        }
+
+        $result = [
+            'years'     => [],
+            'divisions' => array_fill_keys(self::DIVISIONS, []),
+            'roles'     => ['leader' => [], 'follower' => []],
+            'total'     => [],
+            'dancers'   => [],
+        ];
+
+        if (empty($byYear)) {
+            return $result;
+        }
+
+        for ($year = min(array_keys($byYear)); $year <= max(array_keys($byYear)); $year++) {
+            $row = $byYear[$year] ?? [];
+            $result['years'][] = $year;
+            foreach (self::DIVISIONS as $div) {
+                $result['divisions'][$div][] = $row['divisions'][$div] ?? 0;
+            }
+            foreach (['leader', 'follower'] as $role) {
+                $result['roles'][$role][] = $row['roles'][$role] ?? 0;
+            }
+            $result['total'][]   = array_sum($row['divisions'] ?? []);
+            $result['dancers'][] = count($row['dancers'] ?? []);
+        }
+
+        return $result;
+    }
+
+    /**
      * National firsts: for each role and division, the first Slovenian
      * dancer(s) to earn points there. Everyone who scored in that earliest
      * month is listed, since event dates only have month precision.

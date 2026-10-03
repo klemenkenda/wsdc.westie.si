@@ -11,14 +11,6 @@ use Illuminate\View\View;
 class AnalysisController extends Controller
 {
     private const DIVISIONS = ['CHA', 'ALS', 'ADV', 'INT', 'NOV', 'NEW'];
-    private const COLORS = [
-        'CHA' => '#8b5cf6',
-        'ALS' => '#3b82f6',
-        'ADV' => '#10b981',
-        'INT' => '#f59e0b',
-        'NOV' => '#06b6d4',
-        'NEW' => '#94a3b8',
-    ];
 
     public function __construct(private HistoryService $history) {}
 
@@ -27,9 +19,10 @@ class AnalysisController extends Controller
         // snapshots() returns newest-first; reverse for chronological order
         $snapshots = array_reverse($this->history->snapshots());
 
-        $chartData = $this->buildChartData($snapshots);
+        $chartData  = $this->buildChartData($snapshots);
+        $pointsData = $this->history->pointsByYear();
 
-        return view('analysis.index', compact('chartData'));
+        return view('analysis.index', compact('chartData', 'pointsData'));
     }
 
     private function buildChartData(array $snapshots): array
@@ -73,44 +66,15 @@ class AnalysisController extends Controller
             $followerCounts[] = $followers;
         }
 
-        // Division datasets
+        // Styling lives in the view, where it can follow the light/dark theme.
         $divisionDatasets = [];
         foreach (self::DIVISIONS as $div) {
-            $color = self::COLORS[$div];
-            $divisionDatasets[] = [
-                'label'           => $div,
-                'data'            => $divCounts[$div],
-                'borderColor'     => $color,
-                'backgroundColor' => $color . '33',
-                'tension'         => 0.3,
-                'fill'            => false,
-                'pointRadius'     => 4,
-                'pointHoverRadius'=> 6,
-            ];
+            $divisionDatasets[] = ['label' => $div, 'data' => $divCounts[$div]];
         }
 
-        // Role datasets
         $roleDatasets = [
-            [
-                'label'           => 'Leaders',
-                'data'            => $leaderCounts,
-                'borderColor'     => '#6366f1',
-                'backgroundColor' => '#6366f133',
-                'tension'         => 0.3,
-                'fill'            => false,
-                'pointRadius'     => 4,
-                'pointHoverRadius'=> 6,
-            ],
-            [
-                'label'           => 'Followers',
-                'data'            => $followerCounts,
-                'borderColor'     => '#f43f5e',
-                'backgroundColor' => '#f43f5e33',
-                'tension'         => 0.3,
-                'fill'            => false,
-                'pointRadius'     => 4,
-                'pointHoverRadius'=> 6,
-            ],
+            ['label' => 'Leaders',   'role' => 'leader',   'data' => $leaderCounts],
+            ['label' => 'Followers', 'role' => 'follower', 'data' => $followerCounts],
         ];
 
         return [
