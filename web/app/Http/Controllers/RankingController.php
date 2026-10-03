@@ -17,7 +17,8 @@ class RankingController extends Controller
         private HistoryService $history,
     ) {}
 
-    private const TOP = 10;
+    private const TOP      = 10;
+    private const TOP_ROLE = 5;
     private const RISING = 3;
 
     /** Home page: absolute ranking by default. */
@@ -35,8 +36,9 @@ class RankingController extends Controller
 
         return view('ranking.index', [
             'entries'     => $entries,
-            'topCount'    => $this->topCount($entries),
-            'rising'      => $this->risingStars($entries, 'leader'),
+            'top'         => self::TOP_ROLE,
+            'topCount'    => $this->topCount($entries, self::TOP_ROLE),
+            'rising'      => $this->risingStars($entries, 'leader', self::TOP_ROLE),
             'roleLabel'   => 'Leaders',
             'role'        => 'leader',
             'scope'       => $scope,
@@ -53,8 +55,9 @@ class RankingController extends Controller
 
         return view('ranking.index', [
             'entries'     => $entries,
-            'topCount'    => $this->topCount($entries),
-            'rising'      => $this->risingStars($entries, 'follower'),
+            'top'         => self::TOP_ROLE,
+            'topCount'    => $this->topCount($entries, self::TOP_ROLE),
+            'rising'      => $this->risingStars($entries, 'follower', self::TOP_ROLE),
             'roleLabel'   => 'Followers',
             'role'        => 'follower',
             'scope'       => $scope,
@@ -69,16 +72,17 @@ class RankingController extends Controller
 
         return view('ranking.absolute', [
             'entries'     => $entries,
-            'topCount'    => $this->topCount($entries),
-            'rising'      => $this->risingStars($entries, null),
+            'top'         => self::TOP,
+            'topCount'    => $this->topCount($entries, self::TOP),
+            'rising'      => $this->risingStars($entries, null, self::TOP),
             'lastUpdated' => $this->data->lastUpdated(),
         ]);
     }
 
-    /** Rows in the top of the table: the top 10, plus anyone tied for 10th. */
-    private function topCount(array $entries): int
+    /** Rows in the top of the table: the top $top, plus anyone tied for the last place. */
+    private function topCount(array $entries, int $top): int
     {
-        return count(array_filter($entries, fn($e) => $e['rank'] <= self::TOP));
+        return count(array_filter($entries, fn($e) => $e['rank'] <= $top));
     }
 
     /**
@@ -87,12 +91,12 @@ class RankingController extends Controller
      *
      * @return array<int, array{entry: array, points: int}>
      */
-    private function risingStars(array $entries, ?string $role): array
+    private function risingStars(array $entries, ?string $role, int $top): array
     {
         $recent = $this->history->pointsInLastMonths(12);
         $stars  = [];
 
-        foreach (array_slice($entries, $this->topCount($entries)) as $e) {
+        foreach (array_slice($entries, $this->topCount($entries, $top)) as $e) {
             $pts = $recent[(int) $e['wscid']] ?? ['leader' => 0, 'follower' => 0];
             $points = $role ? $pts[$role] : $pts['leader'] + $pts['follower'];
             if ($points > 0) {

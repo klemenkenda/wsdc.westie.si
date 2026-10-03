@@ -8,7 +8,7 @@
     <div>
         <div class="eyebrow">Lestvica po vlogi</div>
         <h1>{{ $roleLabel }} lestvica</h1>
-        <p>Najboljših 10 po WSDC točkah.</p>
+        <p>Najboljših {{ $top }} po WSDC točkah.</p>
     </div>
     @include('partials.ranking-tabs', ['current' => $role])
 </div>
@@ -96,7 +96,7 @@
 </div>
 </div>
 
-@include('partials.rising-stars', ['rising' => $rising])
+@include('partials.rising-stars', ['rising' => $rising, 'top' => $top])
 @include('partials.ranking-rest', ['entries' => $entries, 'topCount' => $topCount])
 @endif
 

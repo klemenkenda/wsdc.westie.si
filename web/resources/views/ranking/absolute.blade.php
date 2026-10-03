@@ -89,7 +89,7 @@
 </div>
 </div>
 
-@include('partials.rising-stars', ['rising' => $rising])
+@include('partials.rising-stars', ['rising' => $rising, 'top' => $top])
 @include('partials.ranking-rest', ['entries' => $entries, 'topCount' => $topCount])
 @endif
 
