@@ -343,7 +343,11 @@
             borderWidth: 2,
             backgroundColor: multi ? rgba(s.color, .9) : rgba(s.color, .12),
             fill: multi ? 'stack' : 'origin',
-            cubicInterpolationMode: 'monotone', // smooth, but never overshoots the data
+            // Stacked layers are smoothed independently, so curves would let
+            // empty layers show between their neighbours; keep them straight.
+            // Single lines are smoothed, but never past the data.
+            tension: 0,
+            cubicInterpolationMode: multi ? 'default' : 'monotone',
             pointRadius: 0,
             pointHoverRadius: 5,
             pointBackgroundColor: s.color,
