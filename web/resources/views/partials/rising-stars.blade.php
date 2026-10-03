@@ -13,7 +13,7 @@
 @if(count($rising))
 <div class="mt-4">
     <h2 class="h6 fw-bold mb-1">Vzhajajoče zvezde</h2>
-    <p class="text-muted small mb-3">Največ točk v zadnjih 12 mesecih izven najboljših {{ $top }}. Točke v višji diviziji štejejo dvojno (NEW ×1, NOV ×2, INT ×4, ADV ×8 …).</p>
+    <p class="text-muted small mb-3">Največ točk v zadnjih 12 mesecih izven najboljših {{ $top }}.</p>
     <div class="row g-3">
         @foreach($rising as $star)
         @php $e = $star['entry']; @endphp
