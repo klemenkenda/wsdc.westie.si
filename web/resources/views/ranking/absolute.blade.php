@@ -4,10 +4,13 @@
 
 @section('content')
 
-<div class="page-header">
-    <div class="eyebrow">Slovenska WCS skupnost</div>
-    <h1>Skupna lestvica</h1>
-    <p>Vsi plesalci razvrščeni ne glede na vlogo. Vsak je zastopan s svojo najboljšo vlogo.</p>
+<div class="page-header d-flex align-items-end justify-content-between flex-wrap gap-3">
+    <div>
+        <div class="eyebrow">Slovenska WCS skupnost</div>
+        <h1>Skupna lestvica</h1>
+        <p>Vsi plesalci razvrščeni ne glede na vlogo. Vsak je zastopan s svojo najboljšo vlogo.</p>
+    </div>
+    @include('partials.ranking-tabs', ['current' => 'absolute'])
 </div>
 
 @if(count($entries) === 0)

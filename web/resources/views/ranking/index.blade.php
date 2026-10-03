@@ -10,16 +10,18 @@
         <h1>{{ $roleLabel }} lestvica</h1>
         <p>{{ count($entries) }} plesalcev, razvrščenih po WSDC točkah.</p>
     </div>
-    <div class="seg">
-        <a href="/ranking/{{ $role }}s"
-           class="btn {{ $scope === 'primary' ? 'active' : '' }}">
-            Samo primary
-        </a>
-        <a href="/ranking/{{ $role }}s/all"
-           class="btn {{ $scope === 'all' ? 'active' : '' }}">
-            Primary + secondary
-        </a>
-    </div>
+    @include('partials.ranking-tabs', ['current' => $role])
+</div>
+
+<div class="seg mb-3">
+    <a href="/ranking/{{ $role }}s"
+       class="btn {{ $scope === 'primary' ? 'active' : '' }}">
+        Samo primary
+    </a>
+    <a href="/ranking/{{ $role }}s/all"
+       class="btn {{ $scope === 'all' ? 'active' : '' }}">
+        Primary + secondary
+    </a>
 </div>
 
 @if(count($entries) === 0)
