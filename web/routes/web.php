@@ -24,6 +24,8 @@ Route::get('/history/firsts',             [HistoryController::class, 'firsts']);
 
 Route::get('/analysis',                   [AnalysisController::class, 'index']);
 
+Route::view('/rules/points',              'rules.points');
+
 Route::post('/scrape',                    [ScraperController::class, 'start']);
 Route::get('/scrape/tail',                [ScraperController::class, 'tail']);
 
