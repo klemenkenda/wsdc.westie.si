@@ -8,9 +8,9 @@
     <div>
         <div class="eyebrow">Slovenska WCS skupnost</div>
         <h1>Skupna lestvica</h1>
-        <p>Najboljših 10 plesalcev ne glede na vlogo. Vsak je zastopan s svojo najboljšo vlogo.</p>
+        <p>{{ $showAll ? 'Vsi plesalci' : 'Najboljših ' . $top . ' plesalcev' }} ne glede na vlogo. Vsak je zastopan s svojo najboljšo vlogo.</p>
     </div>
-    @include('partials.ranking-tabs', ['current' => 'absolute'])
+    @include('partials.ranking-tabs', ['current' => 'absolute', 'showAll' => $showAll])
 </div>
 
 @if(count($entries) === 0)

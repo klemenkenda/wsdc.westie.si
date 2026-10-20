@@ -8,17 +8,17 @@
     <div>
         <div class="eyebrow">Lestvica po vlogi</div>
         <h1>{{ $roleLabel }} lestvica</h1>
-        <p>Najboljših {{ $top }} po WSDC točkah.</p>
+        <p>{{ $showAll ? 'Vsi plesalci' : 'Najboljših ' . $top }} po WSDC točkah.</p>
     </div>
-    @include('partials.ranking-tabs', ['current' => $role])
+    @include('partials.ranking-tabs', ['current' => $role, 'showAll' => $showAll])
 </div>
 
 <div class="seg mb-3">
-    <a href="/ranking/{{ $role }}s"
+    <a href="/ranking/{{ $role }}s{{ $showAll ? '?show=all' : '' }}"
        class="btn {{ $scope === 'primary' ? 'active' : '' }}">
         Samo primary
     </a>
-    <a href="/ranking/{{ $role }}s/all"
+    <a href="/ranking/{{ $role }}s/all{{ $showAll ? '?show=all' : '' }}"
        class="btn {{ $scope === 'all' ? 'active' : '' }}">
         Primary + secondary
     </a>

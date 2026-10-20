@@ -36,6 +36,7 @@ class RankingController extends Controller
             'roleLabel'   => 'Leaders',
             'role'        => 'leader',
             'scope'       => $scope,
+            'showAll'     => $this->showAll(),
             'lastUpdated' => $this->data->lastUpdated(),
         ]);
     }
@@ -55,6 +56,7 @@ class RankingController extends Controller
             'roleLabel'   => 'Followers',
             'role'        => 'follower',
             'scope'       => $scope,
+            'showAll'     => $this->showAll(),
             'lastUpdated' => $this->data->lastUpdated(),
         ]);
     }
@@ -69,13 +71,24 @@ class RankingController extends Controller
             'top'         => self::TOP,
             'topCount'    => $this->topCount($entries, self::TOP),
             'rising'      => $this->risingStars($entries, null, self::TOP),
+            'showAll'     => $this->showAll(),
             'lastUpdated' => $this->data->lastUpdated(),
         ]);
+    }
+
+    /** Hidden ?show=all: the table lists everyone instead of just the top. */
+    private function showAll(): bool
+    {
+        return request()->query('show') === 'all';
     }
 
     /** Rows in the top of the table: the top $top, plus anyone tied for the last place. */
     private function topCount(array $entries, int $top): int
     {
+        if ($this->showAll()) {
+            return count($entries);
+        }
+
         return count(array_filter($entries, fn($e) => $e['rank'] <= $top));
     }
 
