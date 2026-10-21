@@ -11,13 +11,14 @@
         [1, '5–10',   [3, 2, 1, 0, 0],      null,     ['1',   'uneven', null,          null]],
         [2, '11–19',  [6, 4, 3, 2, 1],      null,     ['1–2', 'optional', null,        null]],
         [3, '20–39',  [10, 8, 6, 4, 2],     [1, 10],  ['2',   'yes', null,             'optional']],
-        [4, '40–79',  [15, 12, 10, 8, 6],   [1, 12],  ['3',   'yes', 'optional',       'yes']],
+        [4, '40–79',  [15, 12, 10, 8, 6],   [1, 12],  ['3',   'yes', 'optional',       'waivable']],
         [5, '80–129', [20, 16, 14, 12, 10], [2, 15],  ['3–4', 'yes', 'encouraged',     'yes']],
         [6, '130+',   [25, 22, 18, 15, 12], [2, 15],  ['3–4', 'yes', 'encouraged',     'yes']],
     ];
     $roundLabels = [
         'yes'        => '<strong>obvezno</strong>',
         'optional'   => '<span class="text-muted">neobvezno</span>',
+        'waivable'   => '<strong>obvezno</strong>*',
         'encouraged' => 'priporočeno',
         'uneven'     => '<span class="text-muted">le pri neenakem številu</span>',
     ];
@@ -86,7 +87,7 @@
             <li>Stopnja se določi po številu <strong>različnih tekmovalcev v posamezni vlogi</strong>. Vodje in sledilke istega tekmovanja so lahko v različnih stopnjah – npr. 18 vodij in 35 sledilk: vodje dobijo točke stopnje 2, sledilke stopnje 3.</li>
             <li>Točke dobijo samo uvrščeni v finale; uvrstitev v finale točk še ne zagotavlja.</li>
             <li>Finale je vedno na sporedu; število krogov (z njim vred) je najmanjše obvezno. Če so vodje in sledilke v različnih stopnjah, število krogov določa <strong>višja stopnja</strong>.</li>
-            <li>Krog se lahko izpusti, če število tekmovalcev za največ 10&nbsp;% preseže zgornjo mejo prejšnje stopnje – npr. tekmovanje stopnje 4 s 43 sledilkami (in manj kot 39 vodji) ima lahko le predtekmovanje in finale.</li>
+            <li>* Krog se lahko izpusti, če število tekmovalcev za največ 10&nbsp;% preseže zgornjo mejo prejšnje stopnje – npr. tekmovanje stopnje 4 s 43 sledilkami (in manj kot 39 vodji) ima lahko le predtekmovanje in finale.</li>
             <li>Če se tekmovalec v isti diviziji uvrsti dvakrat, dobi točke le za boljšo uvrstitev.</li>
             <li>Pri združenih divizijah se točke podelijo v nižji diviziji (npr. Advanced/All-Star prinese točke Advanced), razen Newcomer/Novice, ki prinese točke Novice.</li>
             <li>Osnutek pravil za 2027 stopnjo 2 deli na 2A (brez predtekmovanja: 3, 2, 1) in 2B (s predtekmovanjem: 6, 4, 3, 2, 1); ostale stopnje ostajajo enake.</li>
