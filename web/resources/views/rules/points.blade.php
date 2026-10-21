@@ -15,17 +15,45 @@
         [5, '80–129', [20, 16, 14, 12, 10], [2, 15],  ['3–4', 'yes', 'encouraged',     'yes']],
         [6, '130+',   [25, 22, 18, 15, 12], [2, 15],  ['3–4', 'yes', 'encouraged',     'yes']],
     ];
-    $roundLabels = [
-        'yes'        => '<strong>obvezno</strong>',
-        'optional'   => '<span class="text-muted">neobvezno</span>',
-        'waivable'   => '<strong>obvezno</strong>*',
-        'encouraged' => 'priporočeno',
-        'uneven'     => '<span class="text-muted">le pri neenakem številu</span>',
+    $roundNames = ['Predtekmovanje', 'Četrtfinale', 'Polfinale', 'Finale'];
+    // status => [pill class, tooltip]
+    $roundStatus = [
+        'yes'        => ['round-yes', 'obvezno'],
+        'waivable'   => ['round-yes', 'obvezno – razen tik nad mejo stopnje (*)'],
+        'encouraged' => ['round-encouraged', 'priporočeno'],
+        'optional'   => ['round-optional', 'neobvezno'],
+        'uneven'     => ['round-optional', 'le pri neenakem številu vodij in sledilk'],
     ];
+    $roundsWord = fn (string $n) => match ($n) { '1' => 'krog', '2', '1–2' => 'kroga', default => 'krogi' };
     $rulesUrl = 'https://www.worldsdc.com/wp-content/uploads/2026/03/Revised-WSDC-Registry-Event-Rules-Updated-Jan172026-V2026.1B.pdf';
 @endphp
 
 @section('content')
+
+<style>
+    .round-count {
+        display: inline-block; min-width: 3.6em; margin-right: .3rem;
+        font-size: .75rem; font-weight: 600; color: var(--text-muted);
+    }
+    .round-pill {
+        --c: #94a3b8;
+        display: inline-block;
+        font-size: .7rem; font-weight: 600;
+        padding: .18em .6em; border-radius: 999px; line-height: 1.3;
+        white-space: nowrap; cursor: default;
+        color: color-mix(in srgb, var(--c) 82%, #000);
+        background: color-mix(in srgb, var(--c) 14%, transparent);
+        border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
+    }
+    [data-bs-theme="dark"] .round-pill {
+        color: color-mix(in srgb, var(--c) 65%, #fff);
+        background: color-mix(in srgb, var(--c) 20%, transparent);
+    }
+    .round-yes        { --c: #10b981; }
+    .round-encouraged { --c: #f59e0b; }
+    .round-optional   { --c: #94a3b8; border-style: dashed; background: transparent; }
+    [data-bs-theme="dark"] .round-optional { background: transparent; }
+</style>
 
 <div class="page-header">
     <div class="eyebrow">Pravila WSDC</div>
@@ -47,10 +75,7 @@
                 <th class="text-end">4.</th>
                 <th class="text-end">5.</th>
                 <th class="text-end">Ostali finalisti</th>
-                <th class="text-end border-start">Krogov</th>
-                <th>Predtekmovanje</th>
-                <th>Četrtfinale</th>
-                <th>Polfinale</th>
+                <th class="border-start">Krogi</th>
             </tr>
         </thead>
         <tbody>
@@ -70,14 +95,23 @@
                         <span class="pts-zero">0</span>
                     @endif
                 </td>
-                <td class="text-end border-start"><strong>{{ $rounds[0] }}</strong></td>
-                @foreach(array_slice($rounds, 1) as $r)
-                    <td class="small text-nowrap">{!! $r ? $roundLabels[$r] : '<span class="pts-zero">–</span>' !!}</td>
-                @endforeach
+                <td class="border-start text-nowrap">
+                    <span class="round-count">{{ $rounds[0] }} {{ $roundsWord($rounds[0]) }}</span>
+                    @foreach([...array_slice($rounds, 1), 'yes'] as $i => $r)
+                        @continue(!$r)
+                        <span class="round-pill {{ $roundStatus[$r][0] }}" title="{{ $roundNames[$i] }}: {{ $roundStatus[$r][1] }}">{{ $roundNames[$i] }}{{ $r === 'waivable' ? '*' : '' }}</span>
+                    @endforeach
+                </td>
             </tr>
         @endforeach
         </tbody>
     </table>
+    </div>
+    <div class="round-legend small text-muted px-3 pb-3">
+        Krogi:
+        <span class="round-pill round-yes">obvezno</span>
+        <span class="round-pill round-encouraged">priporočeno</span>
+        <span class="round-pill round-optional">neobvezno</span>
     </div>
 </div>
 
