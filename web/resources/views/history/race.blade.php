@@ -36,7 +36,7 @@
         position: absolute; left: 0; right: 0; top: 0; height: var(--row);
         display: flex; align-items: center; will-change: transform, opacity;
     }
-    .race-label { width: var(--label-w); flex-shrink: 0; display: flex; align-items: center; gap: .5rem; padding-right: .6rem; min-width: 0; }
+    .race-label { width: var(--label-w); flex-shrink: 0; display: flex; align-items: center; gap: .5rem; padding-right: .6rem; min-width: 0; height: 100%; background: var(--surface); }
     .race-label .rank-num { flex-shrink: 0; }
     .race-name {
         font-weight: 600; font-size: .9rem; color: var(--bs-body-color);
@@ -165,7 +165,7 @@
     // Fast through the early years, slowing towards the present.
     const durations = frames.map((_, i) => {
         const p = N > 1 ? i / (N - 1) : 1;
-        return 70 + 1030 * Math.pow(p, 2.4);
+        return 140 + 1260 * Math.pow(p, 2.4);
     });
 
     const board  = document.getElementById('raceBoard');
@@ -241,69 +241,106 @@
     let rowH = 46;
     function measure() { rowH = board.clientHeight / TOP; }
 
-    // ── Render an interpolated position f in [0, N-1] ─────────────────────
-    function render(f) {
+    // ── Targets for an interpolated playhead f in [0, N-1] ────────────────
+    // The playhead gives where each bar should be; the drawn bars then glide
+    // towards that (see step()), so even the quick early months move smoothly.
+    function targets(f) {
         const i  = Math.min(Math.floor(f), N - 1);
         const j  = Math.min(i + 1, N - 1);
         const A  = frames[i], B = frames[j];
         // Short frames move linearly so the fast part flows; long ones ease.
         const raw = f - i;
-        const w   = Math.max(0, Math.min(1, (durations[i] - 150) / 500));
+        const w   = Math.max(0, Math.min(1, (durations[i] - 200) / 600));
         const t   = lerp(raw, smooth(raw), w);
         const late = t >= 0.5;
 
-        const max = lerp(A.max, B.max, t);
-        drawAxis(max);
-
-        const shown = new Set([...A.map.keys(), ...B.map.keys()]);
-        rows.forEach((r, id) => { if (!shown.has(id)) set(r, 'disp', 'none', v => r.el.style.display = v); });
-
-        shown.forEach(id => {
-            const r = rowFor(id);
+        const out = new Map();
+        new Set([...A.map.keys(), ...B.map.keys()]).forEach(id => {
             const a = A.map.get(id), b = B.map.get(id);
             const from = a || b, to = b || a;
-            const y  = lerp(a ? a.idx : TOP, b ? b.idx : TOP, t) * rowH;
-            const op = lerp(a ? 1 : 0, b ? 1 : 0, t);
-            const v  = lerp(from.v, to.v, t);
             const cur = late ? to : from;
-            const pts = from.div === to.div ? Math.round(lerp(from.pts, to.pts, t)) : cur.pts;
-            const pct = Math.max(0, v / max * 100);
+            out.set(id, {
+                y:    lerp(a ? a.idx : TOP, b ? b.idx : TOP, t),
+                op:   lerp(a ? 1 : 0, b ? 1 : 0, t),
+                v:    lerp(from.v, to.v, t),
+                pts:  from.div === to.div ? Math.round(lerp(from.pts, to.pts, t)) : cur.pts,
+                rank: (a && b ? cur : to).rank,
+                div:  cur.div,
+                role: cur.role,
+            });
+        });
+        return { rows: out, max: lerp(A.max, B.max, t), frame: late ? j : i };
+    }
 
+    // Drawn state, eased towards the targets with time constant TAU (ms).
+    const TAU = 280;
+    const view = { max: null };
+    const stamp = { state: {} };
+
+    // Draws one step and returns true once everything sits on its target.
+    function step(f, dt) {
+        const T = targets(f);
+        const k = dt === Infinity ? 1 : 1 - Math.exp(-dt / TAU);
+        let settled = true;
+
+        view.max = view.max === null ? T.max : view.max + (T.max - view.max) * k;
+        if (Math.abs(T.max - view.max) > 0.002) settled = false;
+        drawAxis(view.max);
+
+        T.rows.forEach((tg, id) => rowFor(id));
+        rows.forEach((r, id) => {
+            const tg = T.rows.get(id);
+            const d  = r.d || (r.d = tg ? { y: tg.y, op: 0, v: tg.v } : { y: TOP, op: 0, v: 0 });
+            const ty = tg ? tg.y : TOP, top = tg ? tg.op : 0, tv = tg ? tg.v : d.v;
+
+            d.y  += (ty - d.y) * k;
+            d.op += (top - d.op) * k;
+            d.v  += (tv - d.v) * k;
+            if (Math.abs(ty - d.y) > 0.005 || Math.abs(top - d.op) > 0.005 || Math.abs(tv - d.v) > 0.002) settled = false;
+
+            if (!tg && d.op < 0.01) {
+                set(r, 'disp', 'none', x => r.el.style.display = x);
+                return;
+            }
             set(r, 'disp', '', x => r.el.style.display = x);
-            r.el.style.transform = 'translateY(' + y.toFixed(1) + 'px)';
-            set(r, 'op', op.toFixed(2), x => r.el.style.opacity = x);
-            // Keep the leader on top while rows cross.
-            set(r, 'z', String(TOP - Math.round(y / rowH)), x => r.el.style.zIndex = x);
+
+            const pct = Math.max(0, d.v / view.max * 100);
+            r.el.style.transform = 'translateY(' + (d.y * rowH).toFixed(1) + 'px)';
+            set(r, 'op', d.op.toFixed(2), x => r.el.style.opacity = x);
+            // Keep the higher-ranked row on top while rows cross.
+            set(r, 'z', String(TOP - Math.round(d.y)), x => r.el.style.zIndex = x);
             r.bar.style.width = pct + '%';
             r.val.style.left  = pct + '%';
-            set(r, 'rank', (a && b ? cur : to).rank, x => {
+
+            if (!tg) return; // leaving rows keep their last labels
+            set(r, 'rank', tg.rank, x => {
                 r.rank.textContent = x;
                 r.rank.className = 'rank-num' + (x <= 3 ? ' rank-' + x : '');
             });
-            set(r, 'div', cur.div, x => {
+            set(r, 'div', tg.div, x => {
                 r.bar.style.setProperty('--c', 'var(--div-' + x + ')');
                 r.badge.className = 'division-badge div-' + x;
                 r.badge.textContent = x;
             });
-            set(r, 'role', cur.role, x => {
+            set(r, 'role', tg.role, x => {
                 r.role.className = 'race-role ' + x;
                 r.role.title = x === 'L' ? 'leader' : 'follower';
             });
-            set(r, 'pts', pts, x => r.pts.textContent = x);
+            set(r, 'pts', tg.pts, x => r.pts.textContent = x);
         });
 
-        const shownFrame = late ? j : i;
-        set(stamp, 'm', shownFrame, k => {
+        set(stamp, 'm', T.frame, k => {
             monthEl.textContent = monthLabel(months[k]);
             const c = frames[k].count;
             countEl.textContent = c + ' ' + (c % 100 === 1 ? 'plesalec' : c % 100 === 2 ? 'plesalca'
                 : (c % 100 === 3 || c % 100 === 4) ? 'plesalci' : 'plesalcev') + ' s točkami';
         });
+
+        return settled;
     }
-    const stamp = { state: {} };
 
     // ── Playback ──────────────────────────────────────────────────────────
-    let pos = 0, playing = false, last = 0, speed = 1, raf = 0;
+    let pos = 0, playing = false, last = 0, speed = 1, running = false;
     const ICON_PLAY  = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>';
     const ICON_PAUSE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
     const ICON_AGAIN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>';
@@ -314,33 +351,40 @@
         playBtn.setAttribute('aria-label', playing ? 'Ustavi' : atEnd ? 'Ponovno' : 'Predvajaj');
     }
 
-    function tick(now) {
+    // One loop drives both playback and the glide; it stops once idle.
+    function loop(now) {
         const dt = Math.min(now - last, 100);
         last = now;
-        let budget = dt * speed;
-        while (budget > 0 && pos < N - 1) {
-            const i = Math.floor(pos);
-            const left = (i + 1 - pos) * durations[i];
-            if (budget >= left) { pos = i + 1; budget -= left; }
-            else { pos += budget / durations[i]; budget = 0; }
+        if (playing) {
+            let budget = dt * speed;
+            while (budget > 0 && pos < N - 1) {
+                const i = Math.floor(pos);
+                const left = (i + 1 - pos) * durations[i];
+                if (budget >= left) { pos = i + 1; budget -= left; }
+                else { pos += budget / durations[i]; budget = 0; }
+            }
+            slider.value = pos;
+            if (pos >= N - 1) { playing = false; updateButton(); }
         }
-        render(pos);
-        slider.value = pos;
-        if (pos >= N - 1) { playing = false; updateButton(); return; }
-        raf = requestAnimationFrame(tick);
+        const settled = step(pos, dt);
+        if (playing || !settled) requestAnimationFrame(loop);
+        else running = false;
+    }
+    function kick() {
+        if (running) return;
+        running = true;
+        last = performance.now();
+        requestAnimationFrame(loop);
     }
 
     function play() {
         if (pos >= N - 1) pos = 0;
         playing = true;
-        last = performance.now();
         updateButton();
-        cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(tick);
+        kick();
     }
     function pause() {
         playing = false;
-        cancelAnimationFrame(raf);
         updateButton();
     }
 
@@ -348,8 +392,8 @@
     slider.addEventListener('input', () => {
         pause();
         pos = parseFloat(slider.value);
-        render(pos);
         updateButton();
+        kick();
     });
     document.querySelectorAll('#raceSpeed [data-speed]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -357,17 +401,17 @@
             document.querySelectorAll('#raceSpeed .btn').forEach(b => b.classList.toggle('active', b === btn));
         });
     });
-    window.addEventListener('resize', () => { measure(); render(pos); });
+    window.addEventListener('resize', () => { measure(); step(pos, Infinity); });
 
     measure();
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) {
         pos = N - 1;
         slider.value = pos;
-        render(pos);
+        step(pos, Infinity);
         updateButton();
     } else {
-        render(0);
+        step(0, Infinity);
         updateButton();
         setTimeout(play, 600);
     }
