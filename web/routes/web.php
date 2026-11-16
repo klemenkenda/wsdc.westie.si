@@ -21,6 +21,7 @@ Route::get('/ranking/absolute',           [RankingController::class, 'absolute']
 Route::get('/history',                    [HistoryController::class, 'index']);
 Route::get('/history/recent',             [HistoryController::class, 'recent']);
 Route::get('/history/firsts',             [HistoryController::class, 'firsts']);
+Route::get('/history/race',               [HistoryController::class, 'race']);
 
 Route::get('/analysis',                   [AnalysisController::class, 'index']);
 

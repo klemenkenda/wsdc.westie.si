@@ -399,6 +399,65 @@ class HistoryService
     }
 
     /**
+     * The absolute top $top for every calendar month from the first month
+     * with points to the last, for the animated ranking race.
+     *
+     * [
+     *   'months'  => [201305, 201306, …],
+     *   'names'   => [wscid => 'Ana Novak', …],   // everyone who ever appears
+     *   'frames'  => [                            // one per month
+     *     ['count' => 12, 'top' => [[wscid, rank, 'NOV', 23, 'L'], …]],
+     *   ],
+     * ]
+     *
+     * Each top entry: wscid, rank, required division, points in that
+     * division, role ('L' or 'F') that ranks the dancer highest.
+     */
+    public function monthlyTop(int $top = 10): array
+    {
+        $rawData = $this->loadAllRaw();
+        $nameMap = $this->buildNameMap();
+
+        $first = null;
+        $last  = null;
+        foreach ($rawData as $raw) {
+            foreach (['leader', 'follower'] as $role) {
+                foreach ($raw[$role]['placements']['West Coast Swing'] ?? [] as $divData) {
+                    foreach ($divData['competitions'] ?? [] as $comp) {
+                        $ym = $this->toYearMonth($comp['event']['date'] ?? '');
+                        if (!$ym) {
+                            continue;
+                        }
+                        $first = $first === null ? $ym : min($first, $ym);
+                        $last  = $last === null ? $ym : max($last, $ym);
+                    }
+                }
+            }
+        }
+
+        $result = ['months' => [], 'names' => [], 'frames' => []];
+        if ($first === null) {
+            return $result;
+        }
+
+        for ($ym = $first; $ym <= $last; $ym = $ym % 100 === 12 ? $ym + 89 : $ym + 1) {
+            $rankings = $this->absoluteRankingsAsOf($ym, $rawData, $nameMap);
+            $entries  = [];
+
+            foreach (array_slice($rankings, 0, $top) as $e) {
+                $div = $e['required'];
+                $entries[] = [$e['wscid'], $e['rank'], $div, $e['points'][$div] ?? 0, $e['role'] === 'leader' ? 'L' : 'F'];
+                $result['names'][$e['wscid']] = $e['name'];
+            }
+
+            $result['months'][] = $ym;
+            $result['frames'][] = ['count' => count($rankings), 'top' => $entries];
+        }
+
+        return $result;
+    }
+
+    /**
      * National firsts: for each role and division, the first Slovenian
      * dancer(s) to earn points there. Everyone who scored in that earliest
      * month is listed, since event dates only have month precision.

@@ -31,6 +31,14 @@ class HistoryController extends Controller
         ]);
     }
 
+    public function race(): View
+    {
+        return view('history.race', [
+            'race'        => $this->history->monthlyTop(10),
+            'lastUpdated' => $this->data->lastUpdated(),
+        ]);
+    }
+
     public function firsts(): View
     {
         return view('history.firsts', [
